@@ -23,6 +23,28 @@ export default {
 				arabic: ['Tajawal', 'Cairo', 'system-ui', 'sans-serif'],
 			},
 			colors: {
+				// Romantic theme colors
+				lavender: {
+					DEFAULT: '#B983FF',
+					light: '#D4B3FF',
+					dark: '#A366FF',
+				},
+				'baby-pink': {
+					DEFAULT: '#FFB6B9',
+					light: '#FFD1D3',
+					dark: '#FF9FA4',
+				},
+				'dark-plum': {
+					DEFAULT: '#4A1942',
+					light: '#6B2C5F',
+					dark: '#2F0E2A',
+				},
+				'light-grey': {
+					DEFAULT: '#F9F9F9',
+					light: '#FDFDFD',
+					dark: '#F5F5F5',
+				},
+				
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
 				ring: 'hsl(var(--ring))',
