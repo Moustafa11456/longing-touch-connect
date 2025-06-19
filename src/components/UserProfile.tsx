@@ -4,266 +4,164 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { User, Mail, Calendar, Edit, Save, X, Shield, Star } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { User as UserIcon, Edit3, Save, Heart, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { User as UserType } from "@/types/User";
+import { User } from "@/types/User";
+import PartnerSetup from "./PartnerSetup";
 
 interface UserProfileProps {
-  user: UserType;
-  onUpdateUser: (user: UserType) => void;
+  user: User;
+  onUpdateUser: (user: User) => void;
 }
 
 const UserProfile = ({ user, onUpdateUser }: UserProfileProps) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [editForm, setEditForm] = useState({
-    name: user.name,
-    email: user.email
-  });
+  const [editedName, setEditedName] = useState(user.name);
   const { toast } = useToast();
 
-  const handleSave = () => {
-    const updatedUser = {
-      ...user,
-      name: editForm.name,
-      email: editForm.email
-    };
-    
+  const handleSaveProfile = () => {
+    const updatedUser = { ...user, name: editedName };
     onUpdateUser(updatedUser);
     localStorage.setItem('longingBraceletUser', JSON.stringify(updatedUser));
+    setIsEditing(false);
     
-    setIsEditing(false);
     toast({
-      title: "تم التحديث بنجاح",
-      description: "تم حفظ تغييراتك على الملف الشخصي",
-    });
-  };
-
-  const handleCancel = () => {
-    setEditForm({
-      name: user.name,
-      email: user.email
-    });
-    setIsEditing(false);
-  };
-
-  const getInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('ar-EG', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+      title: "تم الحفظ",
+      description: "تم تحديث الملف الشخصي بنجاح",
+      duration: 3000,
     });
   };
 
   return (
     <div className="space-y-6">
-      {/* Profile Header */}
-      <Card className="bg-white/60 backdrop-blur-sm border-purple-200">
-        <CardHeader className="text-center pb-2">
-          <div className="flex justify-center mb-4">
-            <div className="relative">
-              <Avatar className="w-24 h-24 border-4 border-purple-200">
-                <AvatarImage src="" alt={user.name} />
-                <AvatarFallback className="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-2xl font-bold">
-                  {getInitials(user.name)}
-                </AvatarFallback>
-              </Avatar>
-              <div className="absolute -bottom-1 -right-1 bg-green-500 w-6 h-6 rounded-full border-2 border-white flex items-center justify-center">
-                <div className="w-2 h-2 bg-white rounded-full"></div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="space-y-2">
-            <CardTitle className="text-2xl text-purple-800">{user.name}</CardTitle>
-            <CardDescription className="flex items-center justify-center gap-2">
-              <Mail className="w-4 h-4" />
-              {user.email}
-            </CardDescription>
-            
-            <div className="flex justify-center gap-2 pt-2">
-              <Badge variant="secondary" className="bg-green-100 text-green-700">
-                <Shield className="w-3 h-3 mr-1" />
-                حساب موثق
-              </Badge>
-              <Badge variant="secondary" className="bg-purple-100 text-purple-700">
-                <Star className="w-3 h-3 mr-1" />
-                عضو نشط
-              </Badge>
-            </div>
-          </div>
-        </CardHeader>
-        
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-            <div className="space-y-1">
-              <p className="text-2xl font-bold text-purple-600">
-                {user.id.split('_')[1] ? new Date(parseInt(user.id.split('_')[1])).getMonth() + 1 : 0}
-              </p>
-              <p className="text-sm text-gray-600">لمسات هذا الشهر</p>
-            </div>
-            <div className="space-y-1">
-              <p className="text-2xl font-bold text-pink-600">
-                {Math.floor(Math.random() * 50) + 10}
-              </p>
-              <p className="text-sm text-gray-600">أيام متتالية</p>
-            </div>
-            <div className="space-y-1">
-              <p className="text-2xl font-bold text-violet-600">
-                {Math.floor(Math.random() * 5) + 1}
-              </p>
-              <p className="text-sm text-gray-600">اتصالات نشطة</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <Tabs defaultValue="profile" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 bg-white/60 backdrop-blur-sm">
+          <TabsTrigger value="profile" className="data-[state=active]:bg-red-600 data-[state=active]:text-white">
+            <UserIcon className="w-4 h-4 mr-2" />
+            الملف الشخصي
+          </TabsTrigger>
+          <TabsTrigger value="partner" className="data-[state=active]:bg-red-600 data-[state=active]:text-white">
+            <Users className="w-4 h-4 mr-2" />
+            الشريك
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Profile Details */}
-      <Card className="bg-white/60 backdrop-blur-sm border-purple-200">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle className="text-purple-800">المعلومات الشخصية</CardTitle>
-            <CardDescription>
-              إدارة بياناتك الشخصية ومعلومات الحساب
-            </CardDescription>
-          </div>
-          
-          {!isEditing ? (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsEditing(true)}
-              className="flex items-center gap-2"
-            >
-              <Edit className="w-4 h-4" />
-              تعديل
-            </Button>
-          ) : (
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleCancel}
-                className="flex items-center gap-2"
-              >
-                <X className="w-4 h-4" />
-                إلغاء
-              </Button>
-              <Button
-                size="sm"
-                onClick={handleSave}
-                className="flex items-center gap-2 bg-purple-500 hover:bg-purple-600"
-              >
-                <Save className="w-4 h-4" />
-                حفظ
-              </Button>
-            </div>
-          )}
-        </CardHeader>
-        
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="name" className="text-right block">الاسم الكامل</Label>
-              {isEditing ? (
-                <Input
-                  id="name"
-                  value={editForm.name}
-                  onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
-                  className="text-right"
-                />
-              ) : (
-                <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-md">
-                  <User className="w-4 h-4 text-gray-400" />
-                  <span>{user.name}</span>
+        <TabsContent value="profile" className="space-y-4">
+          <Card className="bg-white/60 backdrop-blur-sm border-red-200">
+            <CardHeader>
+              <CardTitle className="text-right text-red-800">الملف الشخصي</CardTitle>
+              <CardDescription className="text-right">
+                إدارة معلوماتك الشخصية
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Avatar Section */}
+              <div className="flex justify-center">
+                <div className="relative">
+                  <div className="w-24 h-24 bg-gradient-to-br from-red-500 to-red-700 rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                    {user.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-white"></div>
                 </div>
-              )}
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-right block">البريد الإلكتروني</Label>
-              {isEditing ? (
-                <Input
-                  id="email"
-                  type="email"
-                  value={editForm.email}
-                  onChange={(e) => setEditForm(prev => ({ ...prev, email: e.target.value }))}
-                  className="text-left"
-                />
-              ) : (
-                <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-md">
-                  <Mail className="w-4 h-4 text-gray-400" />
-                  <span className="text-left">{user.email}</span>
-                </div>
-              )}
-            </div>
-          </div>
-          
-          <div className="space-y-2">
-            <Label className="text-right block">تاريخ إنشاء الحساب</Label>
-            <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-md">
-              <Calendar className="w-4 h-4 text-gray-400" />
-              <span>{formatDate(user.createdAt)}</span>
-            </div>
-          </div>
-          
-          <div className="space-y-2">
-            <Label className="text-right block">معرف المستخدم</Label>
-            <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-md">
-              <Shield className="w-4 h-4 text-gray-400" />
-              <span className="font-mono text-sm text-gray-600">{user.id}</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Account Security */}
-      <Card className="bg-white/60 backdrop-blur-sm border-purple-200">
-        <CardHeader>
-          <CardTitle className="text-purple-800">أمان الحساب</CardTitle>
-          <CardDescription>
-            إعدادات الحماية والخصوصية
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Button
-              variant="outline"
-              className="w-full justify-start"
-              onClick={() => toast({ title: "قريباً", description: "هذه الميزة ستكون متاحة قريباً" })}
-            >
-              <Shield className="w-4 h-4 mr-2" />
-              تغيير كلمة المرور
-            </Button>
-            
-            <Button
-              variant="outline"
-              className="w-full justify-start"
-              onClick={() => toast({ title: "قريباً", description: "هذه الميزة ستكون متاحة قريباً" })}
-            >
-              <Mail className="w-4 h-4 mr-2" />
-              تحديث البريد الإلكتروني
-            </Button>
-          </div>
-          
-          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <div className="flex items-start gap-3">
-              <Shield className="w-5 h-5 text-blue-600 mt-0.5" />
-              <div>
-                <h4 className="font-semibold text-blue-800">حسابك محمي</h4>
-                <p className="text-sm text-blue-700 mt-1">
-                  يتم تشفير جميع بياناتك وحمايتها بأعلى معايير الأمان. معرفك الفريد يضمن خصوصية تواصلك.
-                </p>
               </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+
+              {/* User Info */}
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label className="text-right block">الاسم</Label>
+                  {isEditing ? (
+                    <Input
+                      value={editedName}
+                      onChange={(e) => setEditedName(e.target.value)}
+                      className="text-right"
+                    />
+                  ) : (
+                    <div className="p-3 bg-gray-50 rounded-md text-right">
+                      {user.name}
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-right block">البريد الإلكتروني</Label>
+                  <div className="p-3 bg-gray-50 rounded-md text-right" dir="ltr">
+                    {user.email}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-right block">تاريخ التسجيل</Label>
+                  <div className="p-3 bg-gray-50 rounded-md text-right">
+                    {new Date(user.createdAt).toLocaleDateString('ar-EG')}
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Button */}
+              <div className="pt-4">
+                {isEditing ? (
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={handleSaveProfile}
+                      className="flex-1 bg-gradient-to-r from-red-600 to-red-800 hover:from-red-700 hover:to-red-900 text-white"
+                    >
+                      <Save className="w-4 h-4 mr-2" />
+                      حفظ التغييرات
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setIsEditing(false);
+                        setEditedName(user.name);
+                      }}
+                      className="border-red-300 text-red-700 hover:bg-red-50"
+                    >
+                      إلغاء
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    onClick={() => setIsEditing(true)}
+                    variant="outline"
+                    className="w-full border-red-300 text-red-700 hover:bg-red-50"
+                  >
+                    <Edit3 className="w-4 h-4 mr-2" />
+                    تعديل الملف الشخصي
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Statistics */}
+          <Card className="bg-white/60 backdrop-blur-sm border-red-200">
+            <CardHeader>
+              <CardTitle className="text-right text-red-800">إحصائيات الاشتياق</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="text-center p-4 bg-red-50 rounded-lg">
+                  <div className="text-2xl font-bold text-red-600">
+                    {user.touchesSent || 0}
+                  </div>
+                  <div className="text-sm text-red-700">لمسات مُرسلة</div>
+                </div>
+                <div className="text-center p-4 bg-red-50 rounded-lg">
+                  <div className="text-2xl font-bold text-red-600">
+                    {user.touchesReceived || 0}
+                  </div>
+                  <div className="text-sm text-red-700">لمسات مُستقبلة</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="partner">
+          <PartnerSetup user={user} onUpdateUser={onUpdateUser} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

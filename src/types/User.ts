@@ -7,6 +7,8 @@ export interface User {
   createdAt: string;
   avatar?: string;
   partnerId?: string;
+  partnerEmail?: string;
+  partnerName?: string;
   touchesSent?: number;
   touchesReceived?: number;
 }

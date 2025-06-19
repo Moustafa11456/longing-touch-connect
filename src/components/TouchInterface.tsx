@@ -39,6 +39,15 @@ const TouchInterface = ({ user, isConnected }: TouchInterfaceProps) => {
       return;
     }
 
+    if (!user.partnerId) {
+      toast({
+        title: "لا يوجد شريك",
+        description: "يرجى إضافة شريك أولاً من الملف الشخصي",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsAnimating(true);
     setTouchesSent(prev => prev + 1);
     setLastTouchTime(new Date());
@@ -50,7 +59,7 @@ const TouchInterface = ({ user, isConnected }: TouchInterfaceProps) => {
 
     toast({
       title: "تم إرسال لمسة الاشتياق ❤️",
-      description: "وصلت لمستك المليئة بالحب إلى الطرف الآخر",
+      description: `وصلت لمستك المليئة بالحب إلى ${user.partnerName || 'شريكك'}`,
       duration: 4000,
     });
 
@@ -99,38 +108,64 @@ const TouchInterface = ({ user, isConnected }: TouchInterfaceProps) => {
 
   return (
     <div className="space-y-6">
+      {/* Partner Status */}
+      {user.partnerId ? (
+        <Card className="bg-white/60 backdrop-blur-sm border-red-200">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-center gap-3">
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <Heart className="w-5 h-5 text-red-600" />
+                  <span className="text-red-800 font-semibold">مرتبط مع {user.partnerName}</span>
+                </div>
+                <p className="text-sm text-red-600">{user.partnerEmail}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="bg-yellow-50 border-yellow-200">
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <p className="text-yellow-800 font-semibold mb-2">لا يوجد شريك مرتبط</p>
+              <p className="text-sm text-yellow-700">يرجى إضافة شريك من الملف الشخصي لبدء إرسال لمسات الاشتياق</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Status Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="bg-white/60 backdrop-blur-sm border-purple-200">
+        <Card className="bg-white/60 backdrop-blur-sm border-red-200">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">لمسات مُرسلة</p>
-                <p className="text-2xl font-bold text-purple-600">{touchesSent}</p>
+                <p className="text-2xl font-bold text-red-600">{touchesSent}</p>
               </div>
-              <Send className="w-8 h-8 text-purple-500" />
+              <Send className="w-8 h-8 text-red-500" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-white/60 backdrop-blur-sm border-pink-200">
+        <Card className="bg-white/60 backdrop-blur-sm border-red-200">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">لمسات مُستقبلة</p>
-                <p className="text-2xl font-bold text-pink-600">{touchesReceived}</p>
+                <p className="text-2xl font-bold text-red-600">{touchesReceived}</p>
               </div>
-              <Heart className="w-8 h-8 text-pink-500" />
+              <Heart className="w-8 h-8 text-red-500" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-white/60 backdrop-blur-sm border-violet-200">
+        <Card className="bg-white/60 backdrop-blur-sm border-red-200">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">الحالة</p>
-                <p className="text-sm font-semibold text-violet-600">
+                <p className="text-sm font-semibold text-red-600">
                   {isConnected ? 'متصل ونشط' : 'غير متصل'}
                 </p>
               </div>
@@ -143,9 +178,9 @@ const TouchInterface = ({ user, isConnected }: TouchInterfaceProps) => {
       </div>
 
       {/* Main Touch Interface */}
-      <Card className="bg-white/60 backdrop-blur-sm border-purple-200">
+      <Card className="bg-white/60 backdrop-blur-sm border-red-200">
         <CardHeader className="text-center">
-          <CardTitle className="text-purple-800 text-2xl">لمسة الاشتياق</CardTitle>
+          <CardTitle className="text-red-800 text-2xl">لمسة الاشتياق</CardTitle>
           <CardDescription>
             اضغط على الزر لإرسال لمسة حب ومودة إلى الطرف الآخر
           </CardDescription>
@@ -155,15 +190,15 @@ const TouchInterface = ({ user, isConnected }: TouchInterfaceProps) => {
           <div className="flex justify-center">
             <Button
               onClick={sendTouch}
-              disabled={!isConnected || isAnimating}
+              disabled={!isConnected || isAnimating || !user.partnerId}
               className={`
                 w-40 h-40 rounded-full text-white font-bold text-lg
                 transition-all duration-300 transform
                 ${isAnimating 
-                  ? 'scale-110 bg-gradient-to-r from-pink-500 to-red-500 animate-pulse' 
-                  : 'hover:scale-105 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600'
+                  ? 'scale-110 bg-gradient-to-r from-red-600 to-red-800 animate-pulse' 
+                  : 'hover:scale-105 bg-gradient-to-r from-red-600 to-red-800 hover:from-red-700 hover:to-red-900'
                 }
-                ${!isConnected ? 'opacity-50 cursor-not-allowed' : ''}
+                ${(!isConnected || !user.partnerId) ? 'opacity-50 cursor-not-allowed' : ''}
                 shadow-2xl
               `}
             >
@@ -182,6 +217,13 @@ const TouchInterface = ({ user, isConnected }: TouchInterfaceProps) => {
                 <div className="flex items-center justify-center gap-2 text-yellow-700">
                   <Vibrate className="w-5 h-5" />
                   <span>يرجى الاتصال بالأسوارة من الأعلى لبدء الاستخدام</span>
+                </div>
+              </div>
+            ) : !user.partnerId ? (
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                <div className="flex items-center justify-center gap-2 text-orange-700">
+                  <Users className="w-5 h-5" />
+                  <span>يرجى إضافة شريك من الملف الشخصي لبدء الاستخدام</span>
                 </div>
               </div>
             ) : (
@@ -208,26 +250,26 @@ const TouchInterface = ({ user, isConnected }: TouchInterfaceProps) => {
       </Card>
 
       {/* Instructions */}
-      <Card className="bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200">
+      <Card className="bg-gradient-to-r from-red-50 to-rose-50 border-red-200">
         <CardHeader>
-          <CardTitle className="text-purple-800 text-center">كيفية الاستخدام</CardTitle>
+          <CardTitle className="text-red-800 text-center">كيفية الاستخدام</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3 text-sm text-gray-700">
             <div className="flex items-start gap-3">
-              <div className="bg-purple-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">1</div>
+              <div className="bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">1</div>
+              <p>أضف شريكك من الملف الشخصي</p>
+            </div>
+            <div className="flex items-start gap-3">
+              <div className="bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">2</div>
               <p>تأكد من الاتصال بالأسوارة عبر البلوتوث</p>
             </div>
             <div className="flex items-start gap-3">
-              <div className="bg-purple-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">2</div>
+              <div className="bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">3</div>
               <p>اضغط على زر "أرسل لمسة اشتياق" لإرسال رسالة حب</p>
             </div>
             <div className="flex items-start gap-3">
-              <div className="bg-purple-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">3</div>
-              <p>ستشعر بالاهتزاز عند وصول لمسة من الطرف الآخر</p>
-            </div>
-            <div className="flex items-start gap-3">
-              <div className="bg-purple-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">4</div>
+              <div className="bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">4</div>
               <p>استمتع بالتواصل العاطفي مع من تحب في أي وقت</p>
             </div>
           </div>

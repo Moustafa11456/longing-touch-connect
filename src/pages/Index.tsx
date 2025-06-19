@@ -65,13 +65,13 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-violet-100 font-arabic">
+    <div className="min-h-screen bg-gradient-to-br from-red-50 via-rose-50 to-red-100 font-arabic">
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-md border-b border-purple-200 sticky top-0 z-50">
+      <header className="bg-white/80 backdrop-blur-md border-b border-red-200 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-2 rounded-full">
+              <div className="bg-gradient-to-r from-red-600 to-red-800 p-2 rounded-full">
                 <Heart className="w-6 h-6 text-white" />
               </div>
               <div>
@@ -105,15 +105,15 @@ const Index = () => {
       <main className="container mx-auto px-4 py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full max-w-4xl mx-auto">
           <TabsList className="grid w-full grid-cols-3 mb-6 bg-white/60 backdrop-blur-sm">
-            <TabsTrigger value="touch" className="flex items-center gap-2 data-[state=active]:bg-purple-500 data-[state=active]:text-white">
+            <TabsTrigger value="touch" className="flex items-center gap-2 data-[state=active]:bg-red-600 data-[state=active]:text-white">
               <Heart className="w-4 h-4" />
               لمسة الاشتياق
             </TabsTrigger>
-            <TabsTrigger value="profile" className="flex items-center gap-2 data-[state=active]:bg-purple-500 data-[state=active]:text-white">
+            <TabsTrigger value="profile" className="flex items-center gap-2 data-[state=active]:bg-red-600 data-[state=active]:text-white">
               <User className="w-4 h-4" />
               الملف الشخصي
             </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center gap-2 data-[state=active]:bg-purple-500 data-[state=active]:text-white">
+            <TabsTrigger value="settings" className="flex items-center gap-2 data-[state=active]:bg-red-600 data-[state=active]:text-white">
               <Settings className="w-4 h-4" />
               الإعدادات
             </TabsTrigger>
@@ -128,9 +128,9 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="settings">
-            <Card className="bg-white/60 backdrop-blur-sm border-purple-200">
+            <Card className="bg-white/60 backdrop-blur-sm border-red-200">
               <CardHeader>
-                <CardTitle className="text-right text-purple-800">الإعدادات</CardTitle>
+                <CardTitle className="text-right text-red-800">الإعدادات</CardTitle>
                 <CardDescription className="text-right">
                   إدارة إعدادات التطبيق والحساب
                 </CardDescription>
@@ -164,12 +164,12 @@ const Index = () => {
                   </Button>
                 </div>
                 
-                <div className="pt-4 border-t border-purple-200 text-center text-sm text-gray-600">
+                <div className="pt-4 border-t border-red-200 text-center text-sm text-gray-600">
                   <p>تم التصميم بواسطة</p>
-                  <p className="font-semibold text-purple-700">Eng. Moustafa Huda</p>
+                  <p className="font-semibold text-red-700">Eng. Moustafa Huda</p>
                   <p className="text-xs mt-2">
                     للتواصل: 
-                    <a href="mailto:Safo6789safo@gmail.com" className="text-purple-600 hover:underline ml-1">
+                    <a href="mailto:Safo6789safo@gmail.com" className="text-red-600 hover:underline ml-1">
                       Safo6789safo@gmail.com
                     </a>
                   </p>
