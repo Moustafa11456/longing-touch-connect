@@ -25,10 +25,13 @@ class BluetoothService {
 
   async requestPermissions(): Promise<boolean> {
     try {
+      // Fix: requestLEScan expects proper parameters
       await BleClient.requestLEScan({
         services: [],
         allowDuplicates: false,
         scanMode: 0
+      }, () => {
+        // Empty callback for permission request
       });
       return true;
     } catch (error) {
@@ -113,11 +116,14 @@ class BluetoothService {
 
     try {
       const touchData = new Uint8Array([1]); // Send touch signal
+      // Fix: Convert Uint8Array to DataView
+      const dataView = new DataView(touchData.buffer);
+      
       await BleClient.write(
         this.connectedDevice.deviceId,
         this.LONGING_SERVICE_UUID,
         this.TOUCH_CHARACTERISTIC_UUID,
-        touchData
+        dataView
       );
       console.log('Touch sent successfully');
       return true;
