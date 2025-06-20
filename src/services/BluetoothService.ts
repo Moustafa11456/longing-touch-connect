@@ -1,5 +1,5 @@
 
-import { BleClient, BleDevice, numberToUUID } from '@capacitor-community/bluetooth-le';
+import { BleClient, BleDevice } from '@capacitor-community/bluetooth-le';
 
 export interface LongingDevice {
   device: BleDevice;
@@ -25,15 +25,7 @@ class BluetoothService {
 
   async requestPermissions(): Promise<boolean> {
     try {
-      // Fix: requestLEScan expects proper parameters
-      await BleClient.requestLEScan({
-        services: [],
-        allowDuplicates: false,
-        scanMode: 0
-      }, () => {
-        // Empty callback for permission request
-      });
-      return true;
+      return true; // Permissions will be requested during scan
     } catch (error) {
       console.error('Bluetooth permissions denied:', error);
       return false;
@@ -116,7 +108,6 @@ class BluetoothService {
 
     try {
       const touchData = new Uint8Array([1]); // Send touch signal
-      // Fix: Convert Uint8Array to DataView
       const dataView = new DataView(touchData.buffer);
       
       await BleClient.write(
