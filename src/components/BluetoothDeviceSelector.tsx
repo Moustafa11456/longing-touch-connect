@@ -1,8 +1,7 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Bluetooth, Loader2, Smartphone, WifiOff } from "lucide-react";
+import { Bluetooth, Loader2, Smartphone, WifiOff, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import BluetoothService, { LongingDevice } from "@/services/BluetoothService";
 
@@ -16,6 +15,7 @@ const BluetoothDeviceSelector = ({ onDeviceConnected, onDisconnected }: Bluetoot
   const [devices, setDevices] = useState<LongingDevice[]>([]);
   const [connectedDevice, setConnectedDevice] = useState<LongingDevice | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [isNative, setIsNative] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -25,14 +25,22 @@ const BluetoothDeviceSelector = ({ onDeviceConnected, onDisconnected }: Bluetoot
   const initializeBluetooth = async () => {
     try {
       await BluetoothService.initialize();
+      setIsNative(BluetoothService.isRunningNative());
       const hasPermissions = await BluetoothService.requestPermissions();
       
       if (hasPermissions) {
         setIsInitialized(true);
-        toast({
-          title: "تم تفعيل البلوتوث",
-          description: "يمكنك الآن البحث عن الأجهزة القريبة",
-        });
+        if (!BluetoothService.isRunningNative()) {
+          toast({
+            title: "وضع تجريبي",
+            description: "التطبيق يعمل في المتصفح - ستظهر أجهزة تجريبية للاختبار",
+          });
+        } else {
+          toast({
+            title: "تم تفعيل البلوتوث",
+            description: "يمكنك الآن البحث عن الأجهزة القريبة",
+          });
+        }
       } else {
         toast({
           title: "تحتاج صلاحيات البلوتوث",
@@ -71,13 +79,13 @@ const BluetoothDeviceSelector = ({ onDeviceConnected, onDisconnected }: Bluetoot
 
       toast({
         title: "جاري البحث",
-        description: "البحث عن أجهزة الاشتياق القريبة...",
+        description: isNative ? "البحث عن أجهزة الاشتياق القريبة..." : "إضافة أجهزة تجريبية للاختبار...",
       });
 
       // Stop scanning after 10 seconds
       setTimeout(() => {
         setIsScanning(false);
-        if (devices.length === 0) {
+        if (devices.length === 0 && isNative) {
           toast({
             title: "لم يتم العثور على أجهزة",
             description: "تأكد من تشغيل جهاز الاشتياق وقربه منك",
@@ -149,6 +157,7 @@ const BluetoothDeviceSelector = ({ onDeviceConnected, onDisconnected }: Bluetoot
           <CardTitle className="text-right text-green-700 flex items-center gap-2">
             <Bluetooth className="w-5 h-5" />
             متصل بجهاز الاشتياق
+            {!isNative && <span className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded">تجريبي</span>}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -181,12 +190,25 @@ const BluetoothDeviceSelector = ({ onDeviceConnected, onDisconnected }: Bluetoot
         <CardTitle className="text-right text-dark-plum flex items-center gap-2">
           <Bluetooth className="w-5 h-5" />
           البحث عن أجهزة الاشتياق
+          {!isNative && <span className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded">وضع تجريبي</span>}
         </CardTitle>
         <CardDescription className="text-right">
-          ابحث عن أجهزة الاشتياق القريبة واتصل بها
+          {isNative ? "ابحث عن أجهزة الاشتياق القريبة واتصل بها" : "التطبيق يعمل في المتصفح - ستظهر أجهزة تجريبية"}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        {!isNative && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-start gap-2">
+              <Info className="w-5 h-5 text-blue-600 mt-0.5" />
+              <div className="text-sm text-blue-700">
+                <p className="font-semibold mb-1">وضع تجريبي</p>
+                <p>لاستخدام البلوتوث الحقيقي، يجب بناء التطبيق كـ APK وتشغيله على الهاتف</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <Button
           onClick={startScanning}
           disabled={isScanning}
