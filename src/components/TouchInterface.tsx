@@ -5,35 +5,35 @@ import { Button } from "@/components/ui/button";
 import { Heart, Send, Vibrate, Users, Zap } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { User } from "@/types/User";
+import BluetoothDeviceSelector from "./BluetoothDeviceSelector";
+import BluetoothService, { LongingDevice } from "@/services/BluetoothService";
 
 interface TouchInterfaceProps {
   user: User;
   isConnected: boolean;
 }
 
-const TouchInterface = ({ user, isConnected }: TouchInterfaceProps) => {
+const TouchInterface = ({ user }: TouchInterfaceProps) => {
   const [isAnimating, setIsAnimating] = useState(false);
   const [touchesReceived, setTouchesReceived] = useState(0);
   const [touchesSent, setTouchesSent] = useState(0);
   const [lastTouchTime, setLastTouchTime] = useState<Date | null>(null);
+  const [connectedDevice, setConnectedDevice] = useState<LongingDevice | null>(null);
   const { toast } = useToast();
 
-  // Simulate receiving touches randomly
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (isConnected && Math.random() < 0.1) { // 10% chance every 5 seconds
-        receiveTouch();
-      }
-    }, 5000);
+  const handleDeviceConnected = (device: LongingDevice) => {
+    setConnectedDevice(device);
+  };
 
-    return () => clearInterval(interval);
-  }, [isConnected]);
+  const handleDeviceDisconnected = () => {
+    setConnectedDevice(null);
+  };
 
-  const sendTouch = () => {
-    if (!isConnected) {
+  const sendTouch = async () => {
+    if (!connectedDevice) {
       toast({
         title: "غير متصل",
-        description: "يرجى الاتصال بالأسوارة أولاً",
+        description: "يرجى الاتصال بجهاز الاشتياق أولاً",
         variant: "destructive",
       });
       return;
@@ -49,19 +49,38 @@ const TouchInterface = ({ user, isConnected }: TouchInterfaceProps) => {
     }
 
     setIsAnimating(true);
-    setTouchesSent(prev => prev + 1);
-    setLastTouchTime(new Date());
+    
+    try {
+      const success = await BluetoothService.sendTouch();
+      
+      if (success) {
+        setTouchesSent(prev => prev + 1);
+        setLastTouchTime(new Date());
 
-    // Vibrate if supported
-    if (navigator.vibrate) {
-      navigator.vibrate([200, 100, 200]);
+        // Vibrate if supported
+        if (navigator.vibrate) {
+          navigator.vibrate([200, 100, 200]);
+        }
+
+        toast({
+          title: "تم إرسال لمسة الاشتياق ❤️",
+          description: `وصلت لمستك المليئة بالحب إلى ${user.partnerName || 'شريكك'}`,
+          duration: 4000,
+        });
+      } else {
+        toast({
+          title: "فشل الإرسال",
+          description: "لم يتم إرسال اللمسة، حاول مرة أخرى",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "خطأ في الإرسال",
+        description: "حدث خطأ أثناء إرسال اللمسة",
+        variant: "destructive",
+      });
     }
-
-    toast({
-      title: "تم إرسال لمسة الاشتياق ❤️",
-      description: `وصلت لمستك المليئة بالحب إلى ${user.partnerName || 'شريكك'}`,
-      duration: 4000,
-    });
 
     setTimeout(() => setIsAnimating(false), 2000);
   };
@@ -81,7 +100,6 @@ const TouchInterface = ({ user, isConnected }: TouchInterfaceProps) => {
       duration: 5000,
     });
 
-    // Add heart animation effect
     createHeartAnimation();
   };
 
@@ -108,6 +126,12 @@ const TouchInterface = ({ user, isConnected }: TouchInterfaceProps) => {
 
   return (
     <div className="space-y-6">
+      {/* Bluetooth Device Selector */}
+      <BluetoothDeviceSelector 
+        onDeviceConnected={handleDeviceConnected}
+        onDisconnected={handleDeviceDisconnected}
+      />
+
       {/* Partner Status */}
       {user.partnerId ? (
         <Card className="bg-white/60 backdrop-blur-sm border-red-200">
@@ -166,10 +190,10 @@ const TouchInterface = ({ user, isConnected }: TouchInterfaceProps) => {
               <div>
                 <p className="text-sm text-gray-600">الحالة</p>
                 <p className="text-sm font-semibold text-red-600">
-                  {isConnected ? 'متصل ونشط' : 'غير متصل'}
+                  {connectedDevice ? 'متصل ونشط' : 'غير متصل'}
                 </p>
               </div>
-              <div className={`w-8 h-8 rounded-full ${isConnected ? 'bg-green-500' : 'bg-gray-400'} flex items-center justify-center`}>
+              <div className={`w-8 h-8 rounded-full ${connectedDevice ? 'bg-green-500' : 'bg-gray-400'} flex items-center justify-center`}>
                 <Zap className="w-4 h-4 text-white" />
               </div>
             </div>
@@ -190,7 +214,7 @@ const TouchInterface = ({ user, isConnected }: TouchInterfaceProps) => {
           <div className="flex justify-center">
             <Button
               onClick={sendTouch}
-              disabled={!isConnected || isAnimating || !user.partnerId}
+              disabled={!connectedDevice || isAnimating || !user.partnerId}
               className={`
                 w-40 h-40 rounded-full text-white font-bold text-lg
                 transition-all duration-300 transform
@@ -198,7 +222,7 @@ const TouchInterface = ({ user, isConnected }: TouchInterfaceProps) => {
                   ? 'scale-110 bg-gradient-to-r from-red-600 to-red-800 animate-pulse' 
                   : 'hover:scale-105 bg-gradient-to-r from-red-600 to-red-800 hover:from-red-700 hover:to-red-900'
                 }
-                ${(!isConnected || !user.partnerId) ? 'opacity-50 cursor-not-allowed' : ''}
+                ${(!connectedDevice || !user.partnerId) ? 'opacity-50 cursor-not-allowed' : ''}
                 shadow-2xl
               `}
             >
@@ -212,11 +236,11 @@ const TouchInterface = ({ user, isConnected }: TouchInterfaceProps) => {
 
           {/* Connection Status */}
           <div className="text-center space-y-2">
-            {!isConnected ? (
+            {!connectedDevice ? (
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                 <div className="flex items-center justify-center gap-2 text-yellow-700">
                   <Vibrate className="w-5 h-5" />
-                  <span>يرجى الاتصال بالأسوارة من الأعلى لبدء الاستخدام</span>
+                  <span>يرجى الاتصال بجهاز الاشتياق من الأعلى لبدء الاستخدام</span>
                 </div>
               </div>
             ) : !user.partnerId ? (
@@ -258,19 +282,19 @@ const TouchInterface = ({ user, isConnected }: TouchInterfaceProps) => {
           <div className="space-y-3 text-sm text-gray-700">
             <div className="flex items-start gap-3">
               <div className="bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">1</div>
-              <p>أضف شريكك من الملف الشخصي</p>
+              <p>اضغط على "بحث عن الأجهزة" للعثور على جهاز الاشتياق</p>
             </div>
             <div className="flex items-start gap-3">
               <div className="bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">2</div>
-              <p>تأكد من الاتصال بالأسوارة عبر البلوتوث</p>
+              <p>اختر جهازك من القائمة واضغط "اتصال"</p>
             </div>
             <div className="flex items-start gap-3">
               <div className="bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">3</div>
-              <p>اضغط على زر "أرسل لمسة اشتياق" لإرسال رسالة حب</p>
+              <p>أضف شريكك من الملف الشخصي</p>
             </div>
             <div className="flex items-start gap-3">
               <div className="bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">4</div>
-              <p>استمتع بالتواصل العاطفي مع من تحب في أي وقت</p>
+              <p>اضغط على زر "أرسل لمسة اشتياق" لإرسال رسالة حب</p>
             </div>
           </div>
         </CardContent>

@@ -2,10 +2,8 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Heart, Bluetooth, User, Settings, MessageCircle, Mail } from "lucide-react";
+import { Heart, User, Settings, Mail } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import AuthForm from "@/components/AuthForm";
 import TouchInterface from "@/components/TouchInterface";
@@ -14,7 +12,6 @@ import { User as UserType } from "@/types/User";
 
 const Index = () => {
   const [currentUser, setCurrentUser] = useState<UserType | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
   const [activeTab, setActiveTab] = useState("touch");
   const { toast } = useToast();
 
@@ -43,19 +40,9 @@ const Index = () => {
   const handleLogout = () => {
     setCurrentUser(null);
     localStorage.removeItem('longingBraceletUser');
-    setIsConnected(false);
     toast({
       title: "تم تسجيل الخروج",
       description: "نراك قريباً!",
-      duration: 3000,
-    });
-  };
-
-  const simulateBluetoothConnection = () => {
-    setIsConnected(!isConnected);
-    toast({
-      title: isConnected ? "تم قطع الاتصال" : "تم الاتصال بنجاح",
-      description: isConnected ? "تم قطع الاتصال مع الأسوارة" : "تم الاتصال مع أسوارة الاشتياق",
       duration: 3000,
     });
   };
@@ -69,7 +56,7 @@ const Index = () => {
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-md border-b border-baby-pink-light sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-center">
             <div className="flex items-center gap-3">
               <div className="bg-gradient-to-r from-lavender to-baby-pink p-2 rounded-full">
                 <Heart className="w-6 h-6 text-white" />
@@ -78,24 +65,6 @@ const Index = () => {
                 <h1 className="text-xl font-bold text-dark-plum">أسوارة الاشتياق</h1>
                 <p className="text-sm text-dark-plum/70">Longing Bracelet</p>
               </div>
-            </div>
-            
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2">
-                <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-gray-400'}`}></div>
-                <span className="text-sm text-dark-plum/70">
-                  {isConnected ? 'متصل' : 'غير متصل'}
-                </span>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={simulateBluetoothConnection}
-                className="flex items-center gap-2 border-lavender text-lavender hover:bg-lavender hover:text-white"
-              >
-                <Bluetooth className="w-4 h-4" />
-                {isConnected ? 'قطع الاتصال' : 'الاتصال'}
-              </Button>
             </div>
           </div>
         </div>
@@ -120,7 +89,7 @@ const Index = () => {
           </TabsList>
 
           <TabsContent value="touch">
-            <TouchInterface user={currentUser} isConnected={isConnected} />
+            <TouchInterface user={currentUser} isConnected={false} />
           </TabsContent>
 
           <TabsContent value="profile">
