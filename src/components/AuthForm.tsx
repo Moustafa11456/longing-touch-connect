@@ -3,9 +3,10 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Heart, Mail, Lock, User, ArrowRight } from "lucide-react";
+import { Heart, Mail, Lock, User, ArrowRight, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { User as UserType } from "@/types/User";
 
@@ -15,6 +16,10 @@ interface AuthFormProps {
 
 const AuthForm = ({ onLogin }: AuthFormProps) => {
   const [isLoading, setIsLoading] = useState(false);
+  const [step, setStep] = useState<'auth' | 'verify'>('auth');
+  const [verificationCode, setVerificationCode] = useState('');
+  const [expectedCode, setExpectedCode] = useState('');
+  const [userInfo, setUserInfo] = useState<UserType | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -34,8 +39,21 @@ const AuthForm = ({ onLogin }: AuthFormProps) => {
     return 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
   };
 
+  const generateVerificationCode = () => {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+  };
+
   const validateEmail = (email: string) => {
     return email.endsWith('@gmail.com');
+  };
+
+  const sendVerificationCode = (email: string, code: string) => {
+    // في تطبيق حقيقي، هذا سيرسل إيميل
+    console.log(`Sending verification code ${code} to ${email}`);
+    toast({
+      title: "تم إرسال كود التأكيد",
+      description: `تم إرسال كود مكون من 6 أرقام إلى ${email}`,
+    });
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -52,17 +70,22 @@ const AuthForm = ({ onLogin }: AuthFormProps) => {
       return;
     }
 
-    // Simulate login process
+    // محاكاة عملية التحقق من المستخدم
     setTimeout(() => {
+      const code = generateVerificationCode();
+      setExpectedCode(code);
+      
       const user: UserType = {
         id: generateUserId(),
         name: formData.name || formData.email.split('@')[0],
         email: formData.email,
-        isVerified: true,
+        isVerified: false,
         createdAt: new Date().toISOString()
       };
 
-      onLogin(user);
+      setUserInfo(user);
+      sendVerificationCode(formData.email, code);
+      setStep('verify');
       setIsLoading(false);
     }, 1500);
   };
@@ -91,24 +114,63 @@ const AuthForm = ({ onLogin }: AuthFormProps) => {
       return;
     }
 
-    // Simulate registration process
+    // محاكاة عملية إنشاء الحساب
     setTimeout(() => {
+      const code = generateVerificationCode();
+      setExpectedCode(code);
+
       const user: UserType = {
         id: generateUserId(),
         name: formData.name,
         email: formData.email,
-        isVerified: true,
+        isVerified: false,
         createdAt: new Date().toISOString()
       };
 
-      toast({
-        title: "تم إنشاء الحساب بنجاح",
-        description: "مرحباً بك في أسوارة الاشتياق!",
-      });
-
-      onLogin(user);
+      setUserInfo(user);
+      sendVerificationCode(formData.email, code);
+      setStep('verify');
       setIsLoading(false);
     }, 2000);
+  };
+
+  const handleVerifyCode = () => {
+    if (!verificationCode || verificationCode.length !== 6) {
+      toast({
+        title: "كود غير صحيح",
+        description: "يرجى إدخال كود مكون من 6 أرقام",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (verificationCode !== expectedCode) {
+      toast({
+        title: "كود خاطئ",
+        description: "الكود المدخل غير صحيح، يرجى المحاولة مرة أخرى",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (userInfo) {
+      const verifiedUser = { ...userInfo, isVerified: true };
+      onLogin(verifiedUser);
+      
+      toast({
+        title: "تم التحقق بنجاح",
+        description: `مرحباً بك ${verifiedUser.name}!`,
+      });
+    }
+  };
+
+  const handleResendCode = () => {
+    const newCode = generateVerificationCode();
+    setExpectedCode(newCode);
+    
+    if (userInfo) {
+      sendVerificationCode(userInfo.email, newCode);
+    }
   };
 
   const handleForgotPassword = () => {
@@ -135,6 +197,88 @@ const AuthForm = ({ onLogin }: AuthFormProps) => {
       description: "تحقق من بريدك الإلكتروني لاسترداد كلمة المرور",
     });
   };
+
+  if (step === 'verify') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-violet-100 flex items-center justify-center p-4 font-arabic">
+        <div className="w-full max-w-md">
+          {/* Logo and Title */}
+          <div className="text-center mb-8">
+            <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-4 rounded-full w-20 h-20 mx-auto mb-4 flex items-center justify-center">
+              <Heart className="w-10 h-10 text-white" />
+            </div>
+            <h1 className="text-3xl font-bold text-gray-800 mb-2">أسوارة الاشتياق</h1>
+            <p className="text-gray-600">Longing Bracelet</p>
+          </div>
+
+          <Card className="bg-white/80 backdrop-blur-md border-purple-200 shadow-xl">
+            <CardHeader className="text-center">
+              <CardTitle className="text-purple-800">تأكيد البريد الإلكتروني</CardTitle>
+              <CardDescription>
+                أدخل الكود المرسل إلى {userInfo?.email}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex flex-col items-center space-y-4">
+                <Label className="text-center">كود التأكيد (6 أرقام)</Label>
+                <InputOTP 
+                  maxLength={6} 
+                  value={verificationCode} 
+                  onChange={setVerificationCode}
+                >
+                  <InputOTPGroup>
+                    <InputOTPSlot index={0} />
+                    <InputOTPSlot index={1} />
+                    <InputOTPSlot index={2} />
+                    <InputOTPSlot index={3} />
+                    <InputOTPSlot index={4} />
+                    <InputOTPSlot index={5} />
+                  </InputOTPGroup>
+                </InputOTP>
+              </div>
+
+              <div className="space-y-3">
+                <Button
+                  onClick={handleVerifyCode}
+                  className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                  disabled={!verificationCode || verificationCode.length !== 6}
+                >
+                  <div className="flex items-center gap-2">
+                    تأكيد الكود
+                    <ArrowRight className="w-4 h-4" />
+                  </div>
+                </Button>
+
+                <Button
+                  variant="outline"
+                  onClick={handleResendCode}
+                  className="w-full border-purple-300 text-purple-600 hover:bg-purple-50"
+                >
+                  إعادة إرسال الكود
+                </Button>
+
+                <Button
+                  variant="ghost"
+                  onClick={() => setStep('auth')}
+                  className="w-full text-gray-600 hover:text-gray-800"
+                >
+                  <div className="flex items-center gap-2">
+                    <ArrowLeft className="w-4 h-4" />
+                    العودة لتسجيل الدخول
+                  </div>
+                </Button>
+              </div>
+
+              <div className="text-center text-sm text-gray-600">
+                <p>⚠️ للاختبار: الكود هو {expectedCode}</p>
+                <p className="text-xs mt-1">(سيتم إخفاء هذا في الإصدار النهائي)</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-violet-100 flex items-center justify-center p-4 font-arabic">
