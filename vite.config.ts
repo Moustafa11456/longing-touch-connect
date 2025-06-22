@@ -22,7 +22,7 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     rollupOptions: {
-      external: mode === 'production' ? [] : ['@capacitor/core', '@capacitor-community/bluetooth-le']
+      external: []
     }
   },
   define: {
