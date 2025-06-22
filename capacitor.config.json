@@ -1,0 +1,16 @@
+
+{
+  "appId": "app.lovable.longingtouch",
+  "appName": "longing-touch-connect",
+  "webDir": "dist",
+  "plugins": {
+    "BluetoothLe": {
+      "displayStrings": {
+        "scanning": "جاري البحث عن الأجهزة...",
+        "cancel": "إلغاء",
+        "availableDevices": "الأجهزة المتاحة",
+        "noDeviceFound": "لم يتم العثور على أجهزة"
+      }
+    }
+  }
+}

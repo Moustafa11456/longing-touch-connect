@@ -2,7 +2,7 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'app.lovable.619dbd61b0714cf59afa51b41c3a5d7d',
+  appId: 'app.lovable.longingtouch',
   appName: 'longing-touch-connect',
   webDir: 'dist',
   plugins: {
