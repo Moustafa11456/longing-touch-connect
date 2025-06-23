@@ -7,7 +7,7 @@ interface Partnership {
   id: string;
   user1_id: string;
   user2_id: string;
-  status: 'pending' | 'accepted' | 'rejected';
+  status: string; // Changed from strict union to string to match database
   created_at: string;
   accepted_at?: string;
   partner_profile?: {
