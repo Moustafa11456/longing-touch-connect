@@ -3,52 +3,52 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Heart, User, Settings, Mail } from "lucide-react";
+import { Heart, User, Settings, Mail, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import AuthForm from "@/components/AuthForm";
 import TouchInterface from "@/components/TouchInterface";
 import UserProfile from "@/components/UserProfile";
-import { User as UserType } from "@/types/User";
+import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
+import { usePartnership } from "@/hooks/usePartnership";
 
 const Index = () => {
-  const [currentUser, setCurrentUser] = useState<UserType | null>(null);
   const [activeTab, setActiveTab] = useState("touch");
   const { toast } = useToast();
+  const { user, loading: authLoading, signOut } = useAuth();
+  const { profile, loading: profileLoading } = useProfile();
+  const { partnership, loading: partnershipLoading } = usePartnership();
 
-  // Check for existing user session
-  useEffect(() => {
-    const savedUser = localStorage.getItem('longingBraceletUser');
-    if (savedUser) {
-      try {
-        setCurrentUser(JSON.parse(savedUser));
-      } catch (error) {
-        console.error('Error parsing saved user:', error);
-      }
+  const handleLogout = async () => {
+    const { error } = await signOut();
+    if (error) {
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ في تسجيل الخروج",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "تم تسجيل الخروج",
+        description: "نراك قريباً!",
+        duration: 3000,
+      });
     }
-  }, []);
-
-  const handleLogin = (user: UserType) => {
-    setCurrentUser(user);
-    localStorage.setItem('longingBraceletUser', JSON.stringify(user));
-    toast({
-      title: "أهلاً وسهلاً",
-      description: `مرحباً بك ${user.name}! تم تسجيل الدخول بنجاح`,
-      duration: 3000,
-    });
   };
 
-  const handleLogout = () => {
-    setCurrentUser(null);
-    localStorage.removeItem('longingBraceletUser');
-    toast({
-      title: "تم تسجيل الخروج",
-      description: "نراك قريباً!",
-      duration: 3000,
-    });
-  };
+  if (authLoading || profileLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-light-grey-light via-baby-pink-light/20 to-lavender/10 flex items-center justify-center font-arabic">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-lavender" />
+          <p className="text-dark-plum">جاري التحميل...</p>
+        </div>
+      </div>
+    );
+  }
 
-  if (!currentUser) {
-    return <AuthForm onLogin={handleLogin} />;
+  if (!user || !profile) {
+    return <AuthForm />;
   }
 
   return (
@@ -89,11 +89,15 @@ const Index = () => {
           </TabsList>
 
           <TabsContent value="touch">
-            <TouchInterface user={currentUser} isConnected={false} />
+            <TouchInterface 
+              user={profile} 
+              partnership={partnership}
+              isConnected={!!partnership && partnership.status === 'accepted'} 
+            />
           </TabsContent>
 
           <TabsContent value="profile">
-            <UserProfile user={currentUser} onUpdateUser={setCurrentUser} />
+            <UserProfile user={profile} partnership={partnership} />
           </TabsContent>
 
           <TabsContent value="settings">

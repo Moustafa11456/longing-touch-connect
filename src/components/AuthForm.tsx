@@ -2,488 +2,78 @@
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
-import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Heart, Mail, Lock, User, ArrowRight, ArrowLeft } from "lucide-react";
+import { Heart, Mail } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { User as UserType } from "@/types/User";
+import { useAuth } from "@/hooks/useAuth";
 
-interface AuthFormProps {
-  onLogin: (user: UserType) => void;
-}
-
-const AuthForm = ({ onLogin }: AuthFormProps) => {
+const AuthForm = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const [step, setStep] = useState<'auth' | 'verify'>('auth');
-  const [verificationCode, setVerificationCode] = useState('');
-  const [expectedCode, setExpectedCode] = useState('');
-  const [userInfo, setUserInfo] = useState<UserType | null>(null);
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: ''
-  });
+  const { signInWithGoogle } = useAuth();
   const { toast } = useToast();
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData(prev => ({
-      ...prev,
-      [e.target.name]: e.target.value
-    }));
-  };
-
-  const generateUserId = () => {
-    return 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-  };
-
-  const generateVerificationCode = () => {
-    return Math.floor(100000 + Math.random() * 900000).toString();
-  };
-
-  const validateEmail = (email: string) => {
-    return email.endsWith('@gmail.com');
-  };
-
-  const sendVerificationCode = (email: string, code: string) => {
-    // في تطبيق حقيقي، هذا سيرسل إيميل
-    console.log(`Sending verification code ${code} to ${email}`);
-    toast({
-      title: "تم إرسال كود التأكيد",
-      description: `تم إرسال كود مكون من 6 أرقام إلى ${email}`,
-    });
-  };
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleGoogleLogin = async () => {
     setIsLoading(true);
-
-    if (!validateEmail(formData.email)) {
-      toast({
-        title: "خطأ في البريد الإلكتروني",
-        description: "يرجى استخدام بريد إلكتروني من Gmail فقط",
-        variant: "destructive",
-      });
-      setIsLoading(false);
-      return;
-    }
-
-    // محاكاة عملية التحقق من المستخدم
-    setTimeout(() => {
-      const code = generateVerificationCode();
-      setExpectedCode(code);
-      
-      const user: UserType = {
-        id: generateUserId(),
-        name: formData.name || formData.email.split('@')[0],
-        email: formData.email,
-        isVerified: false,
-        createdAt: new Date().toISOString()
-      };
-
-      setUserInfo(user);
-      sendVerificationCode(formData.email, code);
-      setStep('verify');
-      setIsLoading(false);
-    }, 1500);
-  };
-
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    if (!validateEmail(formData.email)) {
-      toast({
-        title: "خطأ في البريد الإلكتروني",
-        description: "يرجى استخدام بريد إلكتروني من Gmail فقط",
-        variant: "destructive",
-      });
-      setIsLoading(false);
-      return;
-    }
-
-    if (formData.password !== formData.confirmPassword) {
-      toast({
-        title: "خطأ في كلمة المرور",
-        description: "كلمتا المرور غير متطابقتان",
-        variant: "destructive",
-      });
-      setIsLoading(false);
-      return;
-    }
-
-    // محاكاة عملية إنشاء الحساب
-    setTimeout(() => {
-      const code = generateVerificationCode();
-      setExpectedCode(code);
-
-      const user: UserType = {
-        id: generateUserId(),
-        name: formData.name,
-        email: formData.email,
-        isVerified: false,
-        createdAt: new Date().toISOString()
-      };
-
-      setUserInfo(user);
-      sendVerificationCode(formData.email, code);
-      setStep('verify');
-      setIsLoading(false);
-    }, 2000);
-  };
-
-  const handleVerifyCode = () => {
-    if (!verificationCode || verificationCode.length !== 6) {
-      toast({
-        title: "كود غير صحيح",
-        description: "يرجى إدخال كود مكون من 6 أرقام",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (verificationCode !== expectedCode) {
-      toast({
-        title: "كود خاطئ",
-        description: "الكود المدخل غير صحيح، يرجى المحاولة مرة أخرى",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (userInfo) {
-      const verifiedUser = { ...userInfo, isVerified: true };
-      onLogin(verifiedUser);
-      
-      toast({
-        title: "تم التحقق بنجاح",
-        description: `مرحباً بك ${verifiedUser.name}!`,
-      });
-    }
-  };
-
-  const handleResendCode = () => {
-    const newCode = generateVerificationCode();
-    setExpectedCode(newCode);
+    const { error } = await signInWithGoogle();
     
-    if (userInfo) {
-      sendVerificationCode(userInfo.email, newCode);
-    }
-  };
-
-  const handleForgotPassword = () => {
-    if (!formData.email) {
+    if (error) {
       toast({
-        title: "أدخل بريدك الإلكتروني",
-        description: "يرجى إدخال البريد الإلكتروني أولاً",
+        title: "خطأ في تسجيل الدخول",
+        description: error.message,
         variant: "destructive",
       });
-      return;
+      setIsLoading(false);
     }
-
-    if (!validateEmail(formData.email)) {
-      toast({
-        title: "خطأ في البريد الإلكتروني",
-        description: "يرجى استخدام بريد إلكتروني من Gmail فقط",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    toast({
-      title: "تم إرسال رابط الاسترداد",
-      description: "تحقق من بريدك الإلكتروني لاسترداد كلمة المرور",
-    });
   };
-
-  if (step === 'verify') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-violet-100 flex items-center justify-center p-4 font-arabic">
-        <div className="w-full max-w-md">
-          {/* Logo and Title */}
-          <div className="text-center mb-8">
-            <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-4 rounded-full w-20 h-20 mx-auto mb-4 flex items-center justify-center">
-              <Heart className="w-10 h-10 text-white" />
-            </div>
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">أسوارة الاشتياق</h1>
-            <p className="text-gray-600">Longing Bracelet</p>
-          </div>
-
-          <Card className="bg-white/80 backdrop-blur-md border-purple-200 shadow-xl">
-            <CardHeader className="text-center">
-              <CardTitle className="text-purple-800">تأكيد البريد الإلكتروني</CardTitle>
-              <CardDescription>
-                أدخل الكود المرسل إلى {userInfo?.email}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex flex-col items-center space-y-4">
-                <Label className="text-center">كود التأكيد (6 أرقام)</Label>
-                <InputOTP 
-                  maxLength={6} 
-                  value={verificationCode} 
-                  onChange={setVerificationCode}
-                >
-                  <InputOTPGroup>
-                    <InputOTPSlot index={0} />
-                    <InputOTPSlot index={1} />
-                    <InputOTPSlot index={2} />
-                    <InputOTPSlot index={3} />
-                    <InputOTPSlot index={4} />
-                    <InputOTPSlot index={5} />
-                  </InputOTPGroup>
-                </InputOTP>
-              </div>
-
-              <div className="space-y-3">
-                <Button
-                  onClick={handleVerifyCode}
-                  className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-                  disabled={!verificationCode || verificationCode.length !== 6}
-                >
-                  <div className="flex items-center gap-2">
-                    تأكيد الكود
-                    <ArrowRight className="w-4 h-4" />
-                  </div>
-                </Button>
-
-                <Button
-                  variant="outline"
-                  onClick={handleResendCode}
-                  className="w-full border-purple-300 text-purple-600 hover:bg-purple-50"
-                >
-                  إعادة إرسال الكود
-                </Button>
-
-                <Button
-                  variant="ghost"
-                  onClick={() => setStep('auth')}
-                  className="w-full text-gray-600 hover:text-gray-800"
-                >
-                  <div className="flex items-center gap-2">
-                    <ArrowLeft className="w-4 h-4" />
-                    العودة لتسجيل الدخول
-                  </div>
-                </Button>
-              </div>
-
-              <div className="text-center text-sm text-gray-600">
-                <p>⚠️ للاختبار: الكود هو {expectedCode}</p>
-                <p className="text-xs mt-1">(سيتم إخفاء هذا في الإصدار النهائي)</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-violet-100 flex items-center justify-center p-4 font-arabic">
-      <div className="w-full max-w-md">
-        {/* Logo and Title */}
-        <div className="text-center mb-8">
-          <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-4 rounded-full w-20 h-20 mx-auto mb-4 flex items-center justify-center">
-            <Heart className="w-10 h-10 text-white" />
+    <div className="min-h-screen bg-gradient-to-br from-light-grey-light via-baby-pink-light/20 to-lavender/10 flex items-center justify-center p-4 font-arabic">
+      <Card className="w-full max-w-md bg-white/80 backdrop-blur-md border-baby-pink-light">
+        <CardHeader className="text-center">
+          <div className="flex justify-center mb-4">
+            <div className="bg-gradient-to-r from-lavender to-baby-pink p-3 rounded-full">
+              <Heart className="w-8 h-8 text-white" />
+            </div>
           </div>
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">أسوارة الاشتياق</h1>
-          <p className="text-gray-600">Longing Bracelet</p>
-          <p className="text-sm text-purple-600 mt-2">اربط قلبك بمن تحب عبر لمسة واحدة</p>
-        </div>
+          <CardTitle className="text-2xl text-dark-plum">أسوارة الاشتياق</CardTitle>
+          <CardDescription className="text-dark-plum/70">
+            اربط قلبك مع من تحب واشعر باللمسات عن بُعد
+          </CardDescription>
+        </CardHeader>
+        
+        <CardContent className="space-y-4">
+          <div className="bg-lavender/10 border border-lavender/30 rounded-lg p-4 text-center">
+            <p className="text-sm text-dark-plum/70 mb-2">
+              مرحباً بك في تجربة الاشتياق الرقمية
+            </p>
+            <p className="text-xs text-dark-plum/60">
+              سجل دخولك بحساب Google لبدء التجربة
+            </p>
+          </div>
 
-        <Card className="bg-white/80 backdrop-blur-md border-purple-200 shadow-xl">
-          <Tabs defaultValue="login" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 bg-purple-100">
-              <TabsTrigger value="login" className="data-[state=active]:bg-purple-500 data-[state=active]:text-white">
-                تسجيل الدخول
-              </TabsTrigger>
-              <TabsTrigger value="register" className="data-[state=active]:bg-purple-500 data-[state=active]:text-white">
-                إنشاء حساب
-              </TabsTrigger>
-            </TabsList>
+          <Button
+            onClick={handleGoogleLogin}
+            disabled={isLoading}
+            className="w-full bg-gradient-to-r from-lavender to-baby-pink hover:from-lavender-dark hover:to-baby-pink-dark text-white"
+          >
+            {isLoading ? (
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                جاري تسجيل الدخول...
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Mail className="w-4 h-4" />
+                تسجيل الدخول بـ Google
+              </div>
+            )}
+          </Button>
 
-            <TabsContent value="login">
-              <CardHeader className="text-center">
-                <CardTitle className="text-purple-800">مرحباً بعودتك</CardTitle>
-                <CardDescription>
-                  سجل دخولك للتواصل مع من تحب
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleLogin} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="email" className="text-right block">البريد الإلكتروني (Gmail)</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      <Input
-                        id="email"
-                        name="email"
-                        type="email"
-                        placeholder="example@gmail.com"
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        className="pl-10 text-left"
-                        required
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="password" className="text-right block">كلمة المرور</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      <Input
-                        id="password"
-                        name="password"
-                        type="password"
-                        placeholder="أدخل كلمة المرور"
-                        value={formData.password}
-                        onChange={handleInputChange}
-                        className="pl-10"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex justify-between items-center">
-                    <Button
-                      type="button"
-                      variant="link"
-                      className="text-purple-600 hover:text-purple-800 p-0 h-auto"
-                      onClick={handleForgotPassword}
-                    >
-                      نسيت كلمة المرور؟
-                    </Button>
-                  </div>
-
-                  <Button
-                    type="submit"
-                    className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        جاري تسجيل الدخول...
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        تسجيل الدخول
-                        <ArrowRight className="w-4 h-4" />
-                      </div>
-                    )}
-                  </Button>
-                </form>
-              </CardContent>
-            </TabsContent>
-
-            <TabsContent value="register">
-              <CardHeader className="text-center">
-                <CardTitle className="text-purple-800">إنشاء حساب جديد</CardTitle>
-                <CardDescription>
-                  انضم لمجتمع أسوارة الاشتياق
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleRegister} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name" className="text-right block">الاسم الكامل</Label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      <Input
-                        id="name"
-                        name="name"
-                        type="text"
-                        placeholder="أدخل اسمك الكامل"
-                        value={formData.name}
-                        onChange={handleInputChange}
-                        className="pl-10"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="email" className="text-right block">البريد الإلكتروني (Gmail)</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      <Input
-                        id="email"
-                        name="email"
-                        type="email"
-                        placeholder="example@gmail.com"
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        className="pl-10 text-left"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="password" className="text-right block">كلمة المرور</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      <Input
-                        id="password"
-                        name="password"
-                        type="password"
-                        placeholder="أدخل كلمة المرور"
-                        value={formData.password}
-                        onChange={handleInputChange}
-                        className="pl-10"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="confirmPassword" className="text-right block">تأكيد كلمة المرور</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      <Input
-                        id="confirmPassword"
-                        name="confirmPassword"
-                        type="password"
-                        placeholder="أعد إدخال كلمة المرور"
-                        value={formData.confirmPassword}
-                        onChange={handleInputChange}
-                        className="pl-10"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <Button
-                    type="submit"
-                    className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        جاري إنشاء الحساب...
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        إنشاء الحساب
-                        <ArrowRight className="w-4 h-4" />
-                      </div>
-                    )}
-                  </Button>
-                </form>
-              </CardContent>
-            </TabsContent>
-          </Tabs>
-        </Card>
-
-        <div className="text-center mt-6 text-sm text-gray-600">
-          <p>✨ يعمل السيرفر في سوريا وجميع البلدان ✨</p>
-          <p className="mt-2">تم التصميم بواسطة <span className="font-semibold text-purple-700">Eng. Moustafa Huda</span></p>
-        </div>
-      </div>
+          <div className="text-center text-xs text-dark-plum/60 pt-4 border-t border-baby-pink-light">
+            <p>بمتابعة استخدام التطبيق، أنت توافق على شروط الخدمة</p>
+            <p className="mt-1">تم التصميم بحب بواسطة Eng. Moustafa Huda</p>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
