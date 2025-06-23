@@ -7,30 +7,61 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { User as UserIcon, Edit3, Save, Heart, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { User } from "@/types/User";
+import { useProfile } from "@/hooks/useProfile";
 import PartnerSetup from "./PartnerSetup";
 
-interface UserProfileProps {
-  user: User;
-  onUpdateUser: (user: User) => void;
+interface Profile {
+  id: string;
+  name: string;
+  email: string;
+  avatar_url?: string;
+  created_at: string;
+  updated_at: string;
 }
 
-const UserProfile = ({ user, onUpdateUser }: UserProfileProps) => {
+interface Partnership {
+  id: string;
+  user1_id: string;
+  user2_id: string;
+  status: string;
+  created_at: string;
+  accepted_at?: string;
+  partner_profile?: {
+    id: string;
+    name: string;
+    email: string;
+    avatar_url?: string;
+  };
+}
+
+interface UserProfileProps {
+  user: Profile;
+  partnership: Partnership | null;
+}
+
+const UserProfile = ({ user, partnership }: UserProfileProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedName, setEditedName] = useState(user.name);
   const { toast } = useToast();
+  const { updateProfile } = useProfile();
 
-  const handleSaveProfile = () => {
-    const updatedUser = { ...user, name: editedName };
-    onUpdateUser(updatedUser);
-    localStorage.setItem('longingBraceletUser', JSON.stringify(updatedUser));
-    setIsEditing(false);
+  const handleSaveProfile = async () => {
+    const { error } = await updateProfile({ name: editedName });
     
-    toast({
-      title: "تم الحفظ",
-      description: "تم تحديث الملف الشخصي بنجاح",
-      duration: 3000,
-    });
+    if (error) {
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ في تحديث الملف الشخصي",
+        variant: "destructive",
+      });
+    } else {
+      setIsEditing(false);
+      toast({
+        title: "تم الحفظ",
+        description: "تم تحديث الملف الشخصي بنجاح",
+        duration: 3000,
+      });
+    }
   };
 
   return (
@@ -93,7 +124,7 @@ const UserProfile = ({ user, onUpdateUser }: UserProfileProps) => {
                 <div className="space-y-2">
                   <Label className="text-right block">تاريخ التسجيل</Label>
                   <div className="p-3 bg-lavender/5 border border-lavender/20 rounded-md text-right">
-                    {new Date(user.createdAt).toLocaleDateString('ar-EG')}
+                    {new Date(user.created_at).toLocaleDateString('ar-EG')}
                   </div>
                 </div>
               </div>
@@ -142,15 +173,11 @@ const UserProfile = ({ user, onUpdateUser }: UserProfileProps) => {
             <CardContent>
               <div className="grid grid-cols-2 gap-4">
                 <div className="text-center p-4 bg-lavender/10 border border-lavender/20 rounded-lg">
-                  <div className="text-2xl font-bold text-lavender">
-                    {user.touchesSent || 0}
-                  </div>
+                  <div className="text-2xl font-bold text-lavender">0</div>
                   <div className="text-sm text-dark-plum/70">لمسات مُرسلة</div>
                 </div>
                 <div className="text-center p-4 bg-baby-pink/10 border border-baby-pink/20 rounded-lg">
-                  <div className="text-2xl font-bold text-baby-pink">
-                    {user.touchesReceived || 0}
-                  </div>
+                  <div className="text-2xl font-bold text-baby-pink">0</div>
                   <div className="text-sm text-dark-plum/70">لمسات مُستقبلة</div>
                 </div>
               </div>
@@ -159,7 +186,7 @@ const UserProfile = ({ user, onUpdateUser }: UserProfileProps) => {
         </TabsContent>
 
         <TabsContent value="partner">
-          <PartnerSetup user={user} onUpdateUser={onUpdateUser} />
+          <PartnerSetup user={user} partnership={partnership} />
         </TabsContent>
       </Tabs>
     </div>
