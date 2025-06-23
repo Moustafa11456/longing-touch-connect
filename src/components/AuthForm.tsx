@@ -2,26 +2,144 @@
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Heart, Mail } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Heart, Mail, Lock, User, ArrowLeft, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 
+type AuthMode = 'signin' | 'signup' | 'reset';
+
 const AuthForm = () => {
+  const [mode, setMode] = useState<AuthMode>('signin');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { signInWithGoogle } = useAuth();
+  const { signIn, signUp, resetPassword } = useAuth();
   const { toast } = useToast();
 
-  const handleGoogleLogin = async () => {
+  const handleSignIn = async () => {
+    if (!email || !password) {
+      toast({
+        title: "خطأ",
+        description: "يرجى إدخال البريد الإلكتروني وكلمة المرور",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
-    const { error } = await signInWithGoogle();
+    const { error } = await signIn(email, password);
     
     if (error) {
       toast({
         title: "خطأ في تسجيل الدخول",
+        description: error.message === 'Invalid login credentials' 
+          ? "البريد الإلكتروني أو كلمة المرور غير صحيحة"
+          : error.message,
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "أهلاً وسهلاً",
+        description: "تم تسجيل الدخول بنجاح",
+        duration: 3000,
+      });
+    }
+    setIsLoading(false);
+  };
+
+  const handleSignUp = async () => {
+    if (!email || !password || !name) {
+      toast({
+        title: "خطأ",
+        description: "يرجى إدخال جميع البيانات المطلوبة",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (password.length < 6) {
+      toast({
+        title: "خطأ",
+        description: "كلمة المرور يجب أن تكون 6 أحرف على الأقل",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    const { error } = await signUp(email, password, name);
+    
+    if (error) {
+      if (error.message.includes('already registered')) {
+        toast({
+          title: "خطأ",
+          description: "هذا البريد الإلكتروني مسجل مسبقاً",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "خطأ في التسجيل",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
+    } else {
+      toast({
+        title: "تم التسجيل بنجاح",
+        description: "تحقق من بريدك الإلكتروني لتأكيد الحساب",
+        duration: 5000,
+      });
+      setMode('signin');
+    }
+    setIsLoading(false);
+  };
+
+  const handleResetPassword = async () => {
+    if (!email) {
+      toast({
+        title: "خطأ",
+        description: "يرجى إدخال البريد الإلكتروني",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    const { error } = await resetPassword(email);
+    
+    if (error) {
+      toast({
+        title: "خطأ",
         description: error.message,
         variant: "destructive",
       });
-      setIsLoading(false);
+    } else {
+      toast({
+        title: "تم الإرسال",
+        description: "تحقق من بريدك الإلكتروني لإعادة تعيين كلمة المرور",
+        duration: 5000,
+      });
+      setMode('signin');
+    }
+    setIsLoading(false);
+  };
+
+  const getTitle = () => {
+    switch (mode) {
+      case 'signin': return 'تسجيل الدخول';
+      case 'signup': return 'إنشاء حساب جديد';
+      case 'reset': return 'استرجاع كلمة المرور';
+    }
+  };
+
+  const getDescription = () => {
+    switch (mode) {
+      case 'signin': return 'سجل دخولك للوصول إلى أسوارة الاشتياق';
+      case 'signup': return 'أنشئ حساباً جديداً للبدء في تجربة الاشتياق';
+      case 'reset': return 'أدخل بريدك الإلكتروني لاسترجاع كلمة المرور';
     }
   };
 
@@ -34,39 +152,118 @@ const AuthForm = () => {
               <Heart className="w-8 h-8 text-white" />
             </div>
           </div>
-          <CardTitle className="text-2xl text-dark-plum">أسوارة الاشتياق</CardTitle>
+          <CardTitle className="text-2xl text-dark-plum">{getTitle()}</CardTitle>
           <CardDescription className="text-dark-plum/70">
-            اربط قلبك مع من تحب واشعر باللمسات عن بُعد
+            {getDescription()}
           </CardDescription>
         </CardHeader>
         
         <CardContent className="space-y-4">
-          <div className="bg-lavender/10 border border-lavender/30 rounded-lg p-4 text-center">
-            <p className="text-sm text-dark-plum/70 mb-2">
-              مرحباً بك في تجربة الاشتياق الرقمية
-            </p>
-            <p className="text-xs text-dark-plum/60">
-              سجل دخولك بحساب Google لبدء التجربة
-            </p>
+          <div className="space-y-4">
+            {mode === 'signup' && (
+              <div className="space-y-2">
+                <Label htmlFor="name" className="text-right block">الاسم الكامل</Label>
+                <div className="relative">
+                  <Input
+                    id="name"
+                    type="text"
+                    placeholder="أدخل اسمك الكامل"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="text-right pr-10"
+                    disabled={isLoading}
+                  />
+                  <User className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-right block">البريد الإلكتروني</Label>
+              <div className="relative">
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="أدخل بريدك الإلكتروني"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="text-right pr-10"
+                  dir="ltr"
+                  disabled={isLoading}
+                />
+                <Mail className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              </div>
+            </div>
+
+            {mode !== 'reset' && (
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-right block">كلمة المرور</Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="أدخل كلمة المرور"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="text-right pr-10"
+                    disabled={isLoading}
+                  />
+                  <Lock className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                </div>
+                {mode === 'signup' && (
+                  <p className="text-xs text-dark-plum/60 text-right">
+                    كلمة المرور يجب أن تكون 6 أحرف على الأقل
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           <Button
-            onClick={handleGoogleLogin}
+            onClick={mode === 'signin' ? handleSignIn : mode === 'signup' ? handleSignUp : handleResetPassword}
             disabled={isLoading}
             className="w-full bg-gradient-to-r from-lavender to-baby-pink hover:from-lavender-dark hover:to-baby-pink-dark text-white"
           >
             {isLoading ? (
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                جاري تسجيل الدخول...
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <Mail className="w-4 h-4" />
-                تسجيل الدخول بـ Google
-              </div>
-            )}
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : null}
+            {mode === 'signin' ? 'تسجيل الدخول' : mode === 'signup' ? 'إنشاء الحساب' : 'إرسال رابط الاسترجاع'}
           </Button>
+
+          <div className="space-y-2">
+            {mode === 'signin' && (
+              <>
+                <Button
+                  variant="ghost"
+                  onClick={() => setMode('reset')}
+                  className="w-full text-baby-pink hover:text-baby-pink-dark"
+                  disabled={isLoading}
+                >
+                  نسيت كلمة المرور؟
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setMode('signup')}
+                  className="w-full border-lavender text-lavender hover:bg-lavender hover:text-white"
+                  disabled={isLoading}
+                >
+                  إنشاء حساب جديد
+                </Button>
+              </>
+            )}
+
+            {(mode === 'signup' || mode === 'reset') && (
+              <Button
+                variant="ghost"
+                onClick={() => setMode('signin')}
+                className="w-full text-dark-plum hover:text-dark-plum/80"
+                disabled={isLoading}
+              >
+                <ArrowLeft className="w-4 h-4 ml-2" />
+                العودة لتسجيل الدخول
+              </Button>
+            )}
+          </div>
 
           <div className="text-center text-xs text-dark-plum/60 pt-4 border-t border-baby-pink-light">
             <p>بمتابعة استخدام التطبيق، أنت توافق على شروط الخدمة</p>

@@ -28,12 +28,37 @@ export const useAuth = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signInWithGoogle = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
+  const signUp = async (email: string, password: string, name: string) => {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
       options: {
-        redirectTo: `${window.location.origin}/`
+        data: {
+          name: name
+        }
       }
+    });
+    return { data, error };
+  };
+
+  const signIn = async (email: string, password: string) => {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+    return { data, error };
+  };
+
+  const resetPassword = async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`
+    });
+    return { error };
+  };
+
+  const updatePassword = async (password: string) => {
+    const { error } = await supabase.auth.updateUser({
+      password: password
     });
     return { error };
   };
@@ -47,7 +72,10 @@ export const useAuth = () => {
     user,
     session,
     loading,
-    signInWithGoogle,
+    signUp,
+    signIn,
+    resetPassword,
+    updatePassword,
     signOut
   };
 };

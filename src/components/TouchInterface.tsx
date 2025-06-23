@@ -40,7 +40,7 @@ const TouchInterface = ({ user, partnership, isConnected }: TouchInterfaceProps)
   const [intensity, setIntensity] = useState(3);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const { sendTouch, receivedTouches } = useTouches();
+  const { sendTouch, touches } = useTouches();
 
   const handleSendTouch = async () => {
     if (!partnership) {
@@ -73,8 +73,8 @@ const TouchInterface = ({ user, partnership, isConnected }: TouchInterfaceProps)
 
   // Handle received touches
   useEffect(() => {
-    if (receivedTouches.length > 0) {
-      const latestTouch = receivedTouches[0];
+    if (touches.length > 0) {
+      const latestTouch = touches[0];
       if (!latestTouch.is_read) {
         toast({
           title: "💖 لمسة اشتياق",
@@ -83,7 +83,7 @@ const TouchInterface = ({ user, partnership, isConnected }: TouchInterfaceProps)
         });
       }
     }
-  }, [receivedTouches, partnership]);
+  }, [touches, partnership]);
 
   return (
     <div className="space-y-6">
@@ -173,14 +173,14 @@ const TouchInterface = ({ user, partnership, isConnected }: TouchInterfaceProps)
       </Card>
 
       {/* Recent Touches */}
-      {receivedTouches.length > 0 && (
+      {touches.length > 0 && (
         <Card className="bg-white/60 backdrop-blur-sm border-lavender/30">
           <CardHeader>
             <CardTitle className="text-right text-dark-plum">آخر اللمسات المستقبلة</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {receivedTouches.slice(0, 3).map((touch) => (
+              {touches.slice(0, 3).map((touch) => (
                 <div key={touch.id} className="flex justify-between items-center p-3 bg-lavender/5 border border-lavender/20 rounded-lg">
                   <div className="text-right">
                     <div className="font-medium text-dark-plum">
