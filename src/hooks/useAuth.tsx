@@ -41,10 +41,18 @@ export const useAuth = () => {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Helper function to get the correct redirect URL
+  const getRedirectUrl = (path: string = '/') => {
+    // Use the production URL if available, otherwise fall back to current origin
+    const baseUrl = window.location.hostname === 'localhost' 
+      ? 'https://619dbd61-b071-4cf5-9afa-51b41c3a5d7d.lovableproject.com'
+      : window.location.origin;
+    return `${baseUrl}${path}`;
+  };
+
   const signUp = async (email: string, password: string, name: string) => {
     try {
-      // Get the current URL to use as redirect
-      const redirectTo = `${window.location.origin}/`;
+      const redirectTo = getRedirectUrl('/');
       
       console.log('Attempting signup with redirect to:', redirectTo);
       
@@ -96,8 +104,7 @@ export const useAuth = () => {
 
   const resetPassword = async (email: string) => {
     try {
-      // Use the current URL as redirect
-      const redirectTo = `${window.location.origin}/reset-password`;
+      const redirectTo = getRedirectUrl('/reset-password');
       
       console.log('Attempting password reset with redirect to:', redirectTo);
       
@@ -160,7 +167,7 @@ export const useAuth = () => {
 
   const resendConfirmation = async (email: string) => {
     try {
-      const redirectTo = `${window.location.origin}/`;
+      const redirectTo = getRedirectUrl('/');
       
       console.log('Resending confirmation email with redirect to:', redirectTo);
       
