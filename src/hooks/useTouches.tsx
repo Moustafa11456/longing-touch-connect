@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { usePartnership } from './usePartnership';
@@ -21,6 +21,7 @@ export const useTouches = () => {
   const { partnership } = usePartnership();
   const [touches, setTouches] = useState<Touch[]>([]);
   const [loading, setLoading] = useState(true);
+  const channelRef = useRef<any>(null);
 
   useEffect(() => {
     if (user && partnership) {
@@ -30,7 +31,16 @@ export const useTouches = () => {
       setTouches([]);
       setLoading(false);
     }
-  }, [user, partnership]);
+
+    // Cleanup function
+    return () => {
+      if (channelRef.current) {
+        console.log('Cleaning up touches channel');
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+    };
+  }, [user?.id, partnership?.id]); // More specific dependencies
 
   const fetchTouches = async () => {
     if (!user || !partnership) return;
@@ -60,8 +70,17 @@ export const useTouches = () => {
   const subscribeToTouches = () => {
     if (!user || !partnership) return;
 
-    const channel = supabase
-      .channel('touches-changes')
+    // Remove existing channel if it exists
+    if (channelRef.current) {
+      console.log('Removing existing touches channel');
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
+
+    // Create new channel with unique name
+    const channelName = `touches-${partnership.id}-${Date.now()}`;
+    channelRef.current = supabase
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
@@ -77,9 +96,7 @@ export const useTouches = () => {
       )
       .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    console.log('Subscribed to touches channel:', channelName);
   };
 
   const sendTouch = async (intensity: number = 3, message?: string) => {

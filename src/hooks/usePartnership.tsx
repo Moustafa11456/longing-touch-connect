@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 
@@ -22,6 +22,7 @@ export const usePartnership = () => {
   const { user } = useAuth();
   const [partnership, setPartnership] = useState<Partnership | null>(null);
   const [loading, setLoading] = useState(true);
+  const channelRef = useRef<any>(null);
 
   useEffect(() => {
     if (user) {
@@ -31,7 +32,16 @@ export const usePartnership = () => {
       setPartnership(null);
       setLoading(false);
     }
-  }, [user]);
+
+    // Cleanup function
+    return () => {
+      if (channelRef.current) {
+        console.log('Cleaning up partnership channel');
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+    };
+  }, [user?.id]); // More specific dependency
 
   const fetchPartnership = async () => {
     if (!user) return;
@@ -74,8 +84,17 @@ export const usePartnership = () => {
   const subscribeToPartnership = () => {
     if (!user) return;
 
-    const channel = supabase
-      .channel('partnership-changes')
+    // Remove existing channel if it exists
+    if (channelRef.current) {
+      console.log('Removing existing partnership channel');
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
+
+    // Create new channel with unique name
+    const channelName = `partnership-${user.id}-${Date.now()}`;
+    channelRef.current = supabase
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
@@ -90,9 +109,7 @@ export const usePartnership = () => {
       )
       .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    console.log('Subscribed to partnership channel:', channelName);
   };
 
   const createPartnership = async (partnerEmail: string) => {
