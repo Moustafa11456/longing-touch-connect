@@ -1,62 +1,48 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Heart, Lock, Loader2, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from "@/hooks/useAuth";
 
 const ResetPassword = () => {
-  const [searchParams] = useSearchParams();
+  const location = useLocation();
   const navigate = useNavigate();
-  const { toast } = useToast();
-
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isValidToken, setIsValidToken] = useState(false);
-  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const { updatePassword } = useAuth();
+  const { toast } = useToast();
 
   useEffect(() => {
-    const token = searchParams.get('access_token');
-    const type = searchParams.get('type');
+    // قراءة باراميترات الـ hash من الرابط (بعد #)
+    const hashParams = new URLSearchParams(location.hash.replace('#', ''));
+    const accessToken = hashParams.get('access_token');
+    const type = hashParams.get('type');
 
-    console.log('Reset password params:', { token, type });
+    console.log('Reset password hash params:', { accessToken, type });
 
-    if (token && type === 'recovery') {
-      setAccessToken(token);
-
-      // تعيين الجلسة باستخدام التوكن لكي تسمح بتحديث كلمة المرور
-      supabase.auth.setSession(token)
-        .then(({ error }) => {
-          if (error) {
-            toast({
-              title: "خطأ في الجلسة",
-              description: error.message,
-              variant: "destructive",
-            });
-            setIsValidToken(false);
-            setTimeout(() => navigate('/'), 3000);
-          } else {
-            setIsValidToken(true);
-            toast({
-              title: "جاهز لإعادة التعيين",
-              description: "يمكنك الآن إدخال كلمة المرور الجديدة",
-            });
-          }
-        });
+    if (accessToken && type === 'recovery') {
+      setIsValidToken(true);
+      toast({
+        title: "جاهز لإعادة التعيين",
+        description: "يمكنك الآن إدخال كلمة المرور الجديدة",
+      });
     } else {
       toast({
         title: "رابط غير صالح",
         description: "الرابط المستخدم غير صالح أو منتهي الصلاحية",
         variant: "destructive",
       });
-      setIsValidToken(false);
-      setTimeout(() => navigate('/'), 3000);
+      setTimeout(() => {
+        navigate('/');
+      }, 3000);
     }
-  }, [searchParams, navigate, toast]);
+  }, [location.hash, navigate, toast]);
 
   const handleUpdatePassword = async () => {
     if (!password || !confirmPassword) {
@@ -87,8 +73,7 @@ const ResetPassword = () => {
     }
 
     setIsLoading(true);
-    const { error } = await supabase.auth.updateUser({ password });
-    setIsLoading(false);
+    const { error } = await updatePassword(password);
 
     if (error) {
       toast({
@@ -101,8 +86,11 @@ const ResetPassword = () => {
         title: "تم التحديث بنجاح",
         description: "تم تحديث كلمة المرور بنجاح. جاري التوجه للصفحة الرئيسية...",
       });
-      setTimeout(() => navigate('/'), 2000);
+      setTimeout(() => {
+        navigate('/');
+      }, 2000);
     }
+    setIsLoading(false);
   };
 
   if (!isValidToken) {
