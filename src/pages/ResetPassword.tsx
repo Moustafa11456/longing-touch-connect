@@ -1,6 +1,5 @@
-
 import { useState, useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +9,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 
 const ResetPassword = () => {
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -19,15 +17,19 @@ const ResetPassword = () => {
   const { updatePassword } = useAuth();
   const { toast } = useToast();
 
+  const getHashParams = () => {
+    const hash = window.location.hash.substring(1); // remove #
+    return new URLSearchParams(hash);
+  };
+
   useEffect(() => {
-    // Check if we have the required parameters
-    const accessToken = searchParams.get('access_token');
-    const refreshToken = searchParams.get('refresh_token');
-    const type = searchParams.get('type');
+    const hashParams = getHashParams();
+    const accessToken = hashParams.get('access_token');
+    const type = hashParams.get('type');
 
-    console.log('Reset password params:', { accessToken: !!accessToken, refreshToken: !!refreshToken, type });
+    console.log('Reset password hash params:', { accessToken, type });
 
-    if (accessToken && refreshToken && type === 'recovery') {
+    if (accessToken && type === 'recovery') {
       setIsValidToken(true);
       toast({
         title: "جاهز لإعادة التعيين",
@@ -43,7 +45,7 @@ const ResetPassword = () => {
         navigate('/');
       }, 3000);
     }
-  }, [searchParams, navigate, toast]);
+  }, [navigate, toast]);
 
   const handleUpdatePassword = async () => {
     if (!password || !confirmPassword) {
@@ -75,7 +77,7 @@ const ResetPassword = () => {
 
     setIsLoading(true);
     const { error } = await updatePassword(password);
-    
+
     if (error) {
       toast({
         title: "خطأ في تحديث كلمة المرور",
@@ -91,6 +93,7 @@ const ResetPassword = () => {
         navigate('/');
       }, 2000);
     }
+
     setIsLoading(false);
   };
 
@@ -128,7 +131,7 @@ const ResetPassword = () => {
             أدخل كلمة المرور الجديدة الخاصة بك
           </CardDescription>
         </CardHeader>
-        
+
         <CardContent className="space-y-4">
           <div className="space-y-4">
             <div className="space-y-2">
