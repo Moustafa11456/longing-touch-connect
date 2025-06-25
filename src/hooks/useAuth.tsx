@@ -10,7 +10,6 @@ export const useAuth = () => {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth event:', event, 'Session:', session);
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
@@ -27,100 +26,49 @@ export const useAuth = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  // هنا عدلنا الرابط ليرسل ?type=recovery عند طلب إعادة تعيين كلمة المرور
-  const getRedirectUrl = (path: string = '/') => {
+  const getRedirectUrl = (path: string = '/reset-password') => {
     const baseUrl = 'https://id-preview--619dbd61-b071-4cf5-9afa-51b41c3a5d7d.lovable.app';
-    if (path === '/reset-password') {
-      return `${baseUrl}${path}?type=recovery`;
-    }
     return `${baseUrl}${path}`;
   };
 
   const signUp = async (email: string, password: string, name: string) => {
-    try {
-      const redirectTo = getRedirectUrl('/');
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: redirectTo,
-          data: { name }
-        }
-      });
-      if (error) console.error('Signup error:', error);
-      else console.log('Signup successful:', data);
-      return { data, error };
-    } catch (err) {
-      console.error('Signup exception:', err);
-      return { data: null, error: err };
-    }
+    const redirectTo = getRedirectUrl('/');
+    return await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: redirectTo,
+        data: { name }
+      }
+    });
   };
 
   const signIn = async (email: string, password: string) => {
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) console.error('Signin error:', error);
-      else console.log('Signin successful:', data);
-      return { data, error };
-    } catch (err) {
-      console.error('Signin exception:', err);
-      return { data: null, error: err };
-    }
+    return await supabase.auth.signInWithPassword({ email, password });
   };
 
   const resetPassword = async (email: string) => {
-    try {
-      const redirectTo = getRedirectUrl('/reset-password');
-      console.log('Attempting password reset with redirect to:', redirectTo);
-      const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
-      if (error) console.error('Password reset error:', error);
-      else console.log('Password reset email sent successfully');
-      return { error };
-    } catch (err) {
-      console.error('Password reset exception:', err);
-      return { error: err };
-    }
+    const redirectTo = getRedirectUrl('/reset-password');
+    return await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo
+    });
   };
 
   const updatePassword = async (password: string) => {
-    try {
-      const { error } = await supabase.auth.updateUser({ password });
-      if (error) console.error('Password update error:', error);
-      else console.log('Password updated successfully');
-      return { error };
-    } catch (err) {
-      console.error('Password update exception:', err);
-      return { error: err };
-    }
+    return await supabase.auth.updateUser({ password });
   };
 
   const signOut = async () => {
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) console.error('Signout error:', error);
-      else console.log('Signout successful');
-      return { error };
-    } catch (err) {
-      console.error('Signout exception:', err);
-      return { error: err };
-    }
+    return await supabase.auth.signOut();
   };
 
   const resendConfirmation = async (email: string) => {
-    try {
-      const redirectTo = getRedirectUrl('/');
-      const { error } = await supabase.auth.resend({
-        type: 'signup',
-        email,
-        options: { emailRedirectTo: redirectTo }
-      });
-      if (error) console.error('Resend confirmation error:', error);
-      else console.log('Confirmation email resent successfully');
-      return { error };
-    } catch (err) {
-      console.error('Resend confirmation exception:', err);
-      return { error: err };
-    }
+    const redirectTo = getRedirectUrl('/');
+    return await supabase.auth.resend({
+      type: 'signup',
+      email: email,
+      options: { emailRedirectTo: redirectTo }
+    });
   };
 
   return {
