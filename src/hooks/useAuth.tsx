@@ -42,8 +42,8 @@ export const useAuth = () => {
 
   // Helper function to get the correct redirect URL
   const getRedirectUrl = (path: string = '/') => {
-    // Always use the correct production URL
-    const baseUrl = 'https://id-preview--619dbd61-b071-4cf5-9afa-51b41c3a5d7d.lovable.app';
+    // Use window.location.origin to get the current domain
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://id-preview--619dbd61-b071-4cf5-9afa-51b41c3a5d7d.lovable.app';
     return `${baseUrl}${path}`;
   };
 
