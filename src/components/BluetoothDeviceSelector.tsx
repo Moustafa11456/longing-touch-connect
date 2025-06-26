@@ -65,12 +65,16 @@ const BluetoothDeviceSelector = ({ onDeviceConnected, onDisconnected }: Bluetoot
 
     setIsScanning(true);
     setDevices([]);
-    
+
+    // قائمة مؤقتة للاحتفاظ بالأجهزة الممسوحة داخل الدالة
+    const foundDevices: LongingDevice[] = [];
+
     try {
       await BluetoothService.scanForDevices((device) => {
         setDevices(prev => {
           const exists = prev.find(d => d.device.deviceId === device.device.deviceId);
           if (!exists) {
+            foundDevices.push(device);
             return [...prev, device];
           }
           return prev;
@@ -82,16 +86,17 @@ const BluetoothDeviceSelector = ({ onDeviceConnected, onDisconnected }: Bluetoot
         description: isNative ? "البحث عن أجهزة الاشتياق القريبة..." : "إضافة أجهزة تجريبية للاختبار...",
       });
 
-      // Stop scanning after 10 seconds
+      // إيقاف البحث بعد 10 ثواني وتحقق من وجود أجهزة
       setTimeout(() => {
         setIsScanning(false);
-        if (devices.length === 0 && isNative) {
+        if (foundDevices.length === 0 && isNative) {
           toast({
             title: "لم يتم العثور على أجهزة",
             description: "تأكد من تشغيل جهاز الاشتياق وقربه منك",
           });
         }
       }, 10000);
+
     } catch (error) {
       setIsScanning(false);
       toast({
@@ -230,7 +235,7 @@ const BluetoothDeviceSelector = ({ onDeviceConnected, onDisconnected }: Bluetoot
         {devices.length > 0 && (
           <div className="space-y-2">
             <h3 className="text-sm font-semibold text-dark-plum">الأجهزة المتاحة:</h3>
-            {devices.map((device, index) => (
+            {devices.map((device) => (
               <div
                 key={device.device.deviceId}
                 className="bg-lavender/10 border border-lavender/20 rounded-lg p-3"
@@ -267,6 +272,15 @@ const BluetoothDeviceSelector = ({ onDeviceConnected, onDisconnected }: Bluetoot
               يرجى تفعيل البلوتوث ومنح الصلاحيات المطلوبة
             </p>
           </div>
+        )}
+
+        {!isScanning && devices.length > 0 && (
+          <Button
+            onClick={startScanning}
+            className="w-full mt-4 bg-gradient-to-r from-lavender to-baby-pink hover:from-lavender-dark hover:to-baby-pink-dark text-white"
+          >
+            بحث مرة أخرى
+          </Button>
         )}
       </CardContent>
     </Card>
