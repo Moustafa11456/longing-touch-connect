@@ -121,7 +121,7 @@ export const usePartnership = () => {
         .from('profiles')
         .select('id')
         .eq('email', partnerEmail)
-        .single();
+        .maybeSingle();
 
       if (partnerError || !partnerProfile) {
         return { error: 'الشريك غير موجود أو لم يسجل بعد في التطبيق' };
