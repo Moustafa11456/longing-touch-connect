@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Heart, Bluetooth, Vibrate, Send, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useTouches } from "@/hooks/useTouches";
+import BluetoothDeviceSelector from "@/components/BluetoothDeviceSelector";
+import { LongingDevice } from "@/services/BluetoothService";
 
 interface Profile {
   id: string;
@@ -39,6 +41,7 @@ interface TouchInterfaceProps {
 const TouchInterface = ({ user, partnership, isConnected }: TouchInterfaceProps) => {
   const [intensity, setIntensity] = useState(3);
   const [isLoading, setIsLoading] = useState(false);
+  const [connectedBracelet, setConnectedBracelet] = useState<LongingDevice | null>(null);
   const { toast } = useToast();
   const { sendTouch, touches } = useTouches();
 
@@ -71,6 +74,22 @@ const TouchInterface = ({ user, partnership, isConnected }: TouchInterfaceProps)
     setIsLoading(false);
   };
 
+  const handleBraceletConnected = (device: LongingDevice) => {
+    setConnectedBracelet(device);
+    toast({
+      title: "تم الاتصال بالأسوارة",
+      description: `تم الاتصال بـ ${device.name} بنجاح`,
+    });
+  };
+
+  const handleBraceletDisconnected = () => {
+    setConnectedBracelet(null);
+    toast({
+      title: "تم قطع الاتصال",
+      description: "تم قطع الاتصال بالأسوارة",
+    });
+  };
+
   // Handle received touches
   useEffect(() => {
     if (touches.length > 0) {
@@ -87,6 +106,12 @@ const TouchInterface = ({ user, partnership, isConnected }: TouchInterfaceProps)
 
   return (
     <div className="space-y-6">
+      {/* Bluetooth Device Selector */}
+      <BluetoothDeviceSelector 
+        onDeviceConnected={handleBraceletConnected}
+        onDisconnected={handleBraceletDisconnected}
+      />
+
       {/* Connection Status */}
       <Card className="bg-white/60 backdrop-blur-sm border-lavender/30">
         <CardHeader>
@@ -99,17 +124,25 @@ const TouchInterface = ({ user, partnership, isConnected }: TouchInterfaceProps)
           <div className="flex items-center justify-between p-4 bg-lavender/5 border border-lavender/20 rounded-lg">
             <div className="text-right">
               <div className="font-medium text-dark-plum">
-                {isConnected ? "متصل" : "غير متصل"}
+                {connectedBracelet ? "متصل بالأسوارة" : "غير متصل بالأسوارة"}
               </div>
               <div className="text-sm text-dark-plum/70">
-                {isConnected 
-                  ? `مرتبط مع ${partnership?.partner_profile?.name}`
-                  : "ابحث عن شريكك أو تأكد من الاتصال"
+                {connectedBracelet 
+                  ? `متصل بـ ${connectedBracelet.name}`
+                  : "ابحث عن الأسوارة للاتصال بها"
                 }
               </div>
             </div>
-            <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+            <div className={`w-3 h-3 rounded-full ${connectedBracelet ? 'bg-green-500' : 'bg-red-500'}`}></div>
           </div>
+          
+          {isConnected && partnership && (
+            <div className="mt-3 p-3 bg-baby-pink/5 border border-baby-pink/20 rounded-lg">
+              <div className="text-sm text-dark-plum/70 text-right">
+                مرتبط مع {partnership.partner_profile?.name}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -150,7 +183,7 @@ const TouchInterface = ({ user, partnership, isConnected }: TouchInterfaceProps)
           {/* Send Button */}
           <Button
             onClick={handleSendTouch}
-            disabled={!isConnected || isLoading}
+            disabled={!isConnected || !connectedBracelet || isLoading}
             className="w-full bg-gradient-to-r from-lavender to-baby-pink hover:from-lavender-dark hover:to-baby-pink-dark text-white py-6 text-lg"
           >
             {isLoading ? (
@@ -161,11 +194,13 @@ const TouchInterface = ({ user, partnership, isConnected }: TouchInterfaceProps)
             إرسال لمسة الاشتياق
           </Button>
 
-          {!isConnected && (
+          {(!isConnected || !connectedBracelet) && (
             <div className="text-center p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
               <Users className="w-8 h-8 text-yellow-600 mx-auto mb-2" />
               <p className="text-sm text-yellow-800">
-                يجب ربط حساب شريك وتفعيل البلوتوث لإرسال اللمسات
+                {!isConnected && "يجب ربط حساب شريك أولاً"}
+                {isConnected && !connectedBracelet && "يجب الاتصال بالأسوارة لإرسال اللمسات"}
+                {!isConnected && !connectedBracelet && "يجب ربط حساب شريك والاتصال بالأسوارة"}
               </p>
             </div>
           )}
