@@ -101,7 +101,19 @@ export const usePartnership = () => {
           event: '*',
           schema: 'public',
           table: 'partnerships',
-          filter: `user1_id=eq.${user.id},user2_id=eq.${user.id}`
+          filter: `user1_id=eq.${user.id}`
+        },
+        () => {
+          fetchPartnership();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'partnerships',
+          filter: `user2_id=eq.${user.id}`
         },
         () => {
           fetchPartnership();
