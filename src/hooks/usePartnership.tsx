@@ -56,7 +56,7 @@ export const usePartnership = () => {
         `)
         .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
         .eq('status', 'accepted')
-        .single();
+        .maybeSingle();
 
       if (error && error.code !== 'PGRST116') {
         console.error('Error fetching partnership:', error);
