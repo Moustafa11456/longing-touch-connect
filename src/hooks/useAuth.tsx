@@ -27,8 +27,11 @@ export const useAuth = () => {
   }, []);
 
   const getRedirectUrl = (path: string = '/reset-password') => {
-    const baseUrl = 'https://id-preview--619dbd61-b071-4cf5-9afa-51b41c3a5d7d.lovable.app';
-    return `${baseUrl}${path}`;
+    const origin =
+      typeof window !== 'undefined' && window.location.origin.startsWith('http')
+        ? window.location.origin
+        : 'https://longing-touch-connect.lovable.app';
+    return `${origin}${path}`;
   };
 
   const signUp = async (email: string, password: string, name: string) => {
