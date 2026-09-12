@@ -128,16 +128,15 @@ export const usePartnership = () => {
     if (!user) return { error: 'No user' };
 
     try {
-      // First, find the partner by email
-      const { data: partnerProfile, error: partnerError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', partnerEmail)
-        .maybeSingle();
+      // First, find the partner by email (secure lookup)
+      const { data: partnerId, error: partnerError } = await supabase
+        .rpc('find_profile_id_by_email', { _email: partnerEmail.trim() });
 
-      if (partnerError || !partnerProfile) {
+      if (partnerError || !partnerId) {
         return { error: 'الشريك غير موجود أو لم يسجل بعد في التطبيق' };
       }
+
+      const partnerProfile = { id: partnerId as string };
 
       if (partnerProfile.id === user.id) {
         return { error: 'لا يمكنك إضافة نفسك كشريك' };
