@@ -2,11 +2,12 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Heart, Bluetooth, Vibrate, Send, Users } from "lucide-react";
+import { Heart, Vibrate, Send, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useTouches } from "@/hooks/useTouches";
 import BluetoothDeviceSelector from "@/components/BluetoothDeviceSelector";
-import { LongingDevice } from "@/services/BluetoothService";
+import { LongingDevice, sendTouchToDevice } from "@/services/BluetoothService";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Profile {
   id: string;
@@ -45,6 +46,42 @@ const TouchInterface = ({ user, partnership, isConnected }: TouchInterfaceProps)
   const { toast } = useToast();
   const { sendTouch, touches } = useTouches();
 
+  // --- 1. الاستماع للمسات اللحظية عبر Supabase Realtime ---
+  useEffect(() => {
+    if (!partnership) return;
+
+    const channelId = `partnership_${partnership.id}`;
+    const channel = supabase.channel(channelId);
+
+    channel
+      .on('broadcast', { event: 'touch_event' }, async (payload) => {
+        console.log('وصلت لمسة لحظية من السيرفر:', payload);
+
+        toast({
+          title: "💖 لمسة اشتياق وصلتك الآن!",
+          description: `بقوة: ${payload.payload?.intensity || 3}`,
+          duration: 4000,
+        });
+
+        // إرسال أمر الاهتزاز والإضاءة للسوار المتصل عبر البلوتوث
+        if (connectedBracelet) {
+          try {
+            await sendTouchToDevice(connectedBracelet, payload.payload?.intensity || 3);
+          } catch (err) {
+            console.error("خطأ في إرسال الإشارة للسوار عبر البلوتوث", err);
+          }
+        }
+      })
+      .subscribe((status) => {
+        console.log('حالة اشتراك قناة اللمسات:', status);
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [partnership, connectedBracelet, toast]);
+
+  // --- 2. إرسال لمسة عبر الشاشة أو السوار ---
   const handleSendTouch = async () => {
     if (!partnership) {
       toast({
@@ -56,12 +93,34 @@ const TouchInterface = ({ user, partnership, isConnected }: TouchInterfaceProps)
     }
 
     setIsLoading(true);
+
+    // أ) الإرسال لقاعدة البيانات
     const { error } = await sendTouch(intensity);
-    
+
+    // ب) البث اللحظي عبر Realtime Broadcast
+    const channelId = `partnership_${partnership.id}`;
+    const channel = supabase.channel(channelId);
+
+    try {
+      await channel.subscribe();
+      await channel.send({
+        type: 'broadcast',
+        event: 'touch_event',
+        payload: { 
+          sender_id: user.id,
+          intensity: intensity 
+        },
+      });
+    } catch (broadcastError) {
+      console.error('خطأ في البث اللحظي:', broadcastError);
+    } finally {
+      supabase.removeChannel(channel);
+    }
+
     if (error) {
       toast({
         title: "خطأ",
-        description: "حدث خطأ في إرسال اللمسة",
+        description: "حدث خطأ في تسجيل اللمسة",
         variant: "destructive",
       });
     } else {
@@ -89,20 +148,6 @@ const TouchInterface = ({ user, partnership, isConnected }: TouchInterfaceProps)
       description: "تم قطع الاتصال بالأسوارة",
     });
   };
-
-  // Handle received touches
-  useEffect(() => {
-    if (touches.length > 0) {
-      const latestTouch = touches[0];
-      if (!latestTouch.is_read) {
-        toast({
-          title: "💖 لمسة اشتياق",
-          description: `تلقيت لمسة حب من ${partnership?.partner_profile?.name}`,
-          duration: 5000,
-        });
-      }
-    }
-  }, [touches, partnership]);
 
   return (
     <div className="space-y-6">

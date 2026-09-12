@@ -148,7 +148,7 @@ class BluetoothService {
     }
   }
 
-  async sendTouch(): Promise<boolean> {
+  async sendTouch(intensity: number = 3): Promise<boolean> {
     if (!this.connectedDevice) {
       console.error('No device connected');
       return false;
@@ -157,11 +157,11 @@ class BluetoothService {
     try {
       if (!this.isNative) {
         // Demo touch for browser
-        console.log('Demo mode: Touch sent successfully');
+        console.log('Demo mode: Touch sent successfully with intensity', intensity);
         return true;
       }
 
-      const touchData = new Uint8Array([1]);
+      const touchData = new Uint8Array([intensity]);
       const dataView = new DataView(touchData.buffer);
       
       await BleClient.write(
@@ -170,7 +170,7 @@ class BluetoothService {
         this.TOUCH_CHARACTERISTIC_UUID,
         dataView
       );
-      console.log('Touch sent successfully');
+      console.log('Touch sent successfully with intensity', intensity);
       return true;
     } catch (error) {
       console.error('Failed to send touch:', error);
@@ -191,4 +191,35 @@ class BluetoothService {
   }
 }
 
-export default new BluetoothService();
+const bluetoothService = new BluetoothService();
+
+export async function sendTouchToDevice(device: LongingDevice, intensity: number = 3): Promise<boolean> {
+  if (!device) {
+    console.error('No device provided to sendTouchToDevice');
+    return false;
+  }
+
+  try {
+    if (!bluetoothService.isRunningNative()) {
+      console.log('Demo mode: Touch sent to device', device.name, 'with intensity', intensity);
+      return true;
+    }
+
+    const touchData = new Uint8Array([intensity]);
+    const dataView = new DataView(touchData.buffer);
+    
+    await BleClient.write(
+      device.device.deviceId,
+      '12345678-1234-5678-9abc-123456789abc',
+      '87654321-4321-8765-cba9-987654321abc',
+      dataView
+    );
+    console.log('Touch sent to device', device.name, 'with intensity', intensity);
+    return true;
+  } catch (error) {
+    console.error('Failed to send touch to device:', error);
+    return false;
+  }
+}
+
+export default bluetoothService;
