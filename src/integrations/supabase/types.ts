@@ -14,7 +14,104 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      partnerships: {
+        Row: {
+          accepted_at: string | null
+          created_at: string | null
+          id: string
+          status: string
+          user1_id: string
+          user2_id: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string | null
+          id?: string
+          status?: string
+          user1_id: string
+          user2_id: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string | null
+          id?: string
+          status?: string
+          user1_id?: string
+          user2_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          email: string
+          id: string
+          name: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          email: string
+          id: string
+          name?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          email?: string
+          id?: string
+          name?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      touches: {
+        Row: {
+          id: string
+          intensity: number
+          is_read: boolean | null
+          message: string | null
+          partnership_id: string
+          received_at: string | null
+          receiver_id: string
+          sender_id: string
+          sent_at: string | null
+        }
+        Insert: {
+          id?: string
+          intensity?: number
+          is_read?: boolean | null
+          message?: string | null
+          partnership_id: string
+          received_at?: string | null
+          receiver_id: string
+          sender_id: string
+          sent_at?: string | null
+        }
+        Update: {
+          id?: string
+          intensity?: number
+          is_read?: boolean | null
+          message?: string | null
+          partnership_id?: string
+          received_at?: string | null
+          receiver_id?: string
+          sender_id?: string
+          sent_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "touches_partnership_id_fkey"
+            columns: ["partnership_id"]
+            isOneToOne: false
+            referencedRelation: "partnerships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
